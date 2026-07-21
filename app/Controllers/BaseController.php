@@ -41,5 +41,16 @@ abstract class BaseController extends Controller
 
         // Preload any models, libraries, etc, here.
         // $this->session = service('session');
+
+        // Force open external browser for LINE app
+        $userAgent = $request->getServer('HTTP_USER_AGENT');
+        if ($userAgent && stripos($userAgent, 'line') !== false) {
+            $uri = (string) $request->getUri();
+            if (strpos($uri, 'openExternalBrowser=1') === false) {
+                $separator = (strpos($uri, '?') !== false) ? '&' : '?';
+                header('Location: ' . $uri . $separator . 'openExternalBrowser=1');
+                exit();
+            }
+        }
     }
 }

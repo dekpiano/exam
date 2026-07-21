@@ -477,7 +477,15 @@ class ExamController extends BaseController
         $apiKey = $settings['Gemini API Key'] ?? '';
 
         $resultModel = new ExamResultModel();
-        $attemptNumber = $resultModel->where('email', $email)->where('exam_id', $examId)->countAllResults() + 1;
+        
+        $attempts = $resultModel->where('email', $email)->where('exam_id', $examId)->countAllResults();
+        $maxAttempts = (int) $exam['max_attempts'];
+        
+        if ($attempts >= $maxAttempts) {
+            return $this->respond(['success' => false, 'message' => 'คุณส่งข้อสอบครบตามสิทธิ์ที่กำหนดแล้ว'], 400);
+        }
+        
+        $attemptNumber = $attempts + 1;
 
         $questionModel = new QuestionModel();
 
@@ -589,7 +597,15 @@ class ExamController extends BaseController
         $settings = $settingModel->getSettings();
 
         $resultModel = new ExamResultModel();
-        $attemptNumber = $resultModel->where('email', $email)->where('exam_id', $examId)->countAllResults() + 1;
+        
+        $attempts = $resultModel->where('email', $email)->where('exam_id', $examId)->countAllResults();
+        $maxAttempts = (int) $exam['max_attempts'];
+        
+        if ($attempts >= $maxAttempts) {
+            return $this->respond(['success' => false, 'message' => 'คุณส่งข้อสอบครบตามสิทธิ์ที่กำหนดแล้ว'], 400);
+        }
+        
+        $attemptNumber = $attempts + 1;
 
         $resultModel->insert([
             'exam_id' => $examId,
