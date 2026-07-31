@@ -442,14 +442,17 @@
         cheatingFlag = '';
         loadQuestions();
 
-        // Detect exiting fullscreen
+        // Detect exiting fullscreen (with initial grace period so auto-fullscreen block won't instantly trigger cheating)
+        var fullscreenCheckEnabled = false;
+        setTimeout(() => { fullscreenCheckEnabled = true; }, 1500);
+
         document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement && isExamActive) {
+            if (!document.fullscreenElement && isExamActive && fullscreenCheckEnabled) {
                 handleCheating('ออกจากโหมดเต็มจอ (Exit Fullscreen)');
             }
         });
         document.addEventListener('webkitfullscreenchange', () => {
-            if (!document.webkitIsFullScreen && isExamActive) {
+            if (!document.webkitIsFullScreen && isExamActive && fullscreenCheckEnabled) {
                 handleCheating('ออกจากโหมดเต็มจอ (Exit Fullscreen)');
             }
         });
@@ -490,21 +493,23 @@
         // Only register anti-cheating event listeners if enabled by teacher
         if (isAntiCheatingEnabled === 1) {
             blurHandler = function() {
+                if (!fullscreenCheckEnabled) return; // Ignore during initial page load/fullscreen prompt
                 // Ignore blur if the input or textarea is active (prevents virtual keyboard false-positives)
                 if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
                     return;
                 }
                 
-                // Add a small 100ms delay to check if focus is regained (prevents false positives from scrollbar clicks/LINE scroll)
+                // Add a small 200ms delay to check if focus is regained
                 setTimeout(() => {
                     if (document.hasFocus() && document.visibilityState === 'visible') {
                         return;
                     }
                     handleCheating('สลับแอป/ย่อหน้าต่างสอบ (Window Blur)');
-                }, 100);
+                }, 200);
             };
 
             visibilityHandler = function() {
+                if (!fullscreenCheckEnabled) return; // Ignore during initial page load
                 if (document.visibilityState === 'hidden') {
                     handleCheating('สลับแท็บเบราว์เซอร์/ย่อเบราว์เซอร์ (Tab Hidden)');
                 }
@@ -660,12 +665,24 @@
             if (res.success && res.questions) {
                 questions = res.questions;
                 if (questions.length > 0) displayQuestion();
-                else Swal.fire('Error', 'ไม่มีข้อสอบในระบบ', 'error');
+                else {
+                    isExamActive = false;
+                    Swal.fire('ข้อผิดพลาด', 'ไม่มีข้อสอบในรายวิชานี้', 'error').then(() => window.location.href = '/');
+                }
             } else {
-                Swal.fire('Error', res.message || 'ไม่สามารถโหลดข้อสอบได้', 'error');
+                isExamActive = false;
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ไม่สามารถทำข้อสอบได้',
+                    text: res.message || 'ไม่สามารถโหลดข้อสอบได้',
+                    confirmButtonText: 'กลับหน้าหลัก'
+                }).then(() => {
+                    window.location.href = '/';
+                });
             }
         } catch (err) {
-            Swal.fire('Error', 'เกิดข้อผิดพลาดในการโหลดข้อสอบ', 'error');
+            isExamActive = false;
+            Swal.fire('Error', 'เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error').then(() => window.location.href = '/');
         }
     }
 

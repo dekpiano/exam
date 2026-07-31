@@ -214,7 +214,9 @@ class ExamController extends BaseController
         $studentModel = new StudentModel();
         $resultModel = new ExamResultModel();
 
-        if ($exam['exam_status'] === 'Started' && ($exam['join_policy'] ?? 'anytime') === 'lobby_first') {
+        if ($exam['exam_status'] === 'Waiting' && ($exam['join_policy'] ?? 'anytime') === 'anytime') {
+            // Exam is in Waiting state, allow student to enter lobby
+        } else if ($exam['exam_status'] === 'Started' && ($exam['join_policy'] ?? 'anytime') === 'lobby_first') {
             $inLobby = $studentModel->where('email', $email)->where('exam_id', $examId)->first();
             if (!$inLobby) {
                 return $this->respond([

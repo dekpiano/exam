@@ -2686,7 +2686,7 @@
             <td style="width: 50%; text-align: right;"><strong>สิทธิ์สอบสูงสุด:</strong> ${exam.max_attempts || '1'} ครั้ง</td>
           </tr>
           <tr>
-            <td style="width: 50%"><strong>เกณฑ์ผ่าน:</strong> ${exam.passing_percentage}% (${Math.ceil(exam.num_questions * exam.passing_percentage / 100)} / ${exam.num_questions} คะแนน)</td>
+            <td style="width: 50%"><strong>เกณฑ์ผ่าน:</strong> ${exam.passing_percentage}% (${(globalMaxChoice + globalMaxWriting > 0 ? (globalMaxChoice + globalMaxWriting) : exam.num_questions) * (exam.passing_percentage || 50) / 100} / ${globalMaxChoice + globalMaxWriting > 0 ? (globalMaxChoice + globalMaxWriting) : exam.num_questions} คะแนน)</td>
             <td style="width: 50%; text-align: right;"></td>
           </tr>
         </table>
@@ -2732,9 +2732,10 @@
           console.error("Error parsing answers_json:", e);
         }
 
-        const fullScore = totalMaxPoints > 0 ? totalMaxPoints : parseInt(exam.num_questions);
-        const passScore = Math.ceil(fullScore * parseInt(exam.passing_percentage) / 100);
-        const studentScore = parseFloat(r.score);
+        const fullScore = totalMaxPoints > 0 ? totalMaxPoints : parseInt(exam.num_questions || 0);
+        const passPercent = parseFloat(exam.passing_percentage) || 50;
+        const passScore = (fullScore * passPercent) / 100;
+        const studentScore = parseFloat(r.score) || 0;
         const isPassed = studentScore >= passScore;
         const evaluation = isPassed ? '<span class="passed">ผ่าน (Pass)</span>' : '<span class="failed">ไม่ผ่าน (Fail)</span>';
 
