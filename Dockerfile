@@ -32,8 +32,8 @@ RUN { \
     echo 'opcache.enable_cli=0'; \
     } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
-# ตั้งค่า Document Root (ไม่ใช้ public ตามแบบ skj2025/pao-erc)
-ENV APACHE_DOCUMENT_ROOT /var/www/html
+# ตั้งค่า Document Root ให้ชี้ไปที่ public
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf

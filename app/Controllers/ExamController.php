@@ -471,12 +471,17 @@ class ExamController extends BaseController
             $answers = json_decode($answers, true);
         }
         $timeSpent = (int) $this->request->getPost('totalTimeSpent');
-        $cheatingFlag = $this->request->getPost('cheatingFlag') ?? 'NO';
-        $cheatingCount = (int) $this->request->getPost('cheatingCount');
 
-        $settingModel = new SettingModel();
-        $settings = $settingModel->getSettings();
-        $apiKey = $settings['Gemini API Key'] ?? '';
+        // Count cheating strikes from server-side logs instead of trusting client input
+        $errorLogModel = new ErrorLogModel();
+        $cheatingCount = $errorLogModel->where('student_email', $email)
+            ->where('exam_id', $examId)
+            ->where('error_type', 'SUSPICIOUS_ACTIVITY')
+            ->countAllResults();
+        $maxStrikes = isset($exam['max_strikes']) && (int) $exam['max_strikes'] > 0
+            ? (int) $exam['max_strikes']
+            : 3;
+        $cheatingFlag = ($cheatingCount >= $maxStrikes) ? 'YES' : 'NO';
 
         $resultModel = new ExamResultModel();
         
@@ -624,7 +629,9 @@ class ExamController extends BaseController
             'total_time_spent' => $timeSpent,
             'attempt_number' => $attemptNumber,
             'cheating_flag' => 'YES',
-            'cheating_count' => (int) ($settings['Max Cheating Strikes'] ?? 3),
+            'cheating_count' => isset($exam['max_strikes']) && (int) $exam['max_strikes'] > 0
+                ? (int) $exam['max_strikes']
+                : (int) ($settings['Max Cheating Strikes'] ?? 3),
             'cheating_reason' => $reason,
             'answers_json' => json_encode([], JSON_UNESCAPED_UNICODE),
             'exam_round' => $exam['exam_round'] ?? '1',

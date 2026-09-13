@@ -1,0 +1,14 @@
+# Block script execution inside the uploads directory
+<FilesMatch "\.(php\d?|phtml|phar|cgi|pl|py|sh|asp|aspx|jsp)$">
+    Require all denied
+</FilesMatch>
+
+# Extra hardening (only if mod_headers is available)
+<IfModule mod_headers.c>
+    <FilesMatch "\.(svg)$">
+        Header set Content-Security-Policy "sandbox"
+    </FilesMatch>
+    <FilesMatch "\.(png|jpe?g|gif|webp|svg)$">
+        Header set X-Content-Type-Options "nosniff"
+    </FilesMatch>
+</IfModule>

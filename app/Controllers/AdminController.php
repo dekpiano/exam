@@ -313,6 +313,30 @@ class AdminController extends BaseController
             return $this->respond(['success' => false, 'message' => 'อีเมลยังไม่ได้รับการยืนยันจาก Google'], 400);
         }
 
+        // Validate token audience against the configured Google Client ID
+        $settingModel = new SettingModel();
+        $gsSettings = $settingModel->getSettings();
+        $expectedClientId = trim($gsSettings['Google Client ID'] ?? '');
+
+        if ($expectedClientId === '') {
+            return $this->respond(['success' => false, 'message' => 'ระบบยังไม่ได้ตั้งค่า Google Client ID กรุณาติดต่อผู้ดูแลระบบ'], 500);
+        }
+
+        $aud = $tokenInfo['aud'] ?? '';
+        if (!hash_equals($expectedClientId, (string) $aud)) {
+            return $this->respond(['success' => false, 'message' => 'Google Token ไม่ถูกต้อง (audience mismatch)'], 401);
+        }
+
+        // Reject expired tokens and unexpected issuers
+        if ((int) ($tokenInfo['exp'] ?? 0) < time()) {
+            return $this->respond(['success' => false, 'message' => 'Google Token หมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่'], 401);
+        }
+
+        $iss = $tokenInfo['iss'] ?? '';
+        if (!in_array($iss, ['accounts.google.com', 'https://accounts.google.com'], true)) {
+            return $this->respond(['success' => false, 'message' => 'ผู้ออกโทเคน (issuer) ไม่ถูกต้อง'], 401);
+        }
+
         if (substr($email, -10) !== '@skj.ac.th') {
             return $this->respond(['success' => false, 'message' => 'อนุญาตเฉพาะอีเมลโรงเรียน (@skj.ac.th) เท่านั้น'], 400);
         }
@@ -368,6 +392,28 @@ class AdminController extends BaseController
         if (!$this->session->get('admin_logged_in')) {
             throw new \Exception('Unauthorized', 401);
         }
+    }
+
+    /**
+     * Delete an uploaded image from both the new (public/uploads) and
+     * legacy (root uploads) storage locations.
+     */
+    private static function deleteUploadedImage(string $url): bool
+    {
+        $name = basename($url);
+        if ($name === '' || $name === '.' || $name === '..') {
+            return false;
+        }
+
+        $deleted = false;
+        foreach ([ROOTPATH . 'public/uploads/', ROOTPATH . 'uploads/'] as $dir) {
+            $path = $dir . $name;
+            if (is_file($path)) {
+                @unlink($path);
+                $deleted = !is_file($path);
+            }
+        }
+        return $deleted;
     }
 
     public function getSettings()
@@ -563,7 +609,10 @@ class AdminController extends BaseController
 
             $updateData = ['exam_status' => $status];
             if ($status === 'Started') {
-                $updateData['started_at'] = date('Y-m-d H:i:s');
+                // Preserve the original start time on resume (Paused -> Started)
+                if (empty($exam['started_at'])) {
+                    $updateData['started_at'] = date('Y-m-d H:i:s');
+                }
             } else if ($status === 'Waiting') {
                 $updateData['started_at'] = null;
             }
@@ -724,10 +773,7 @@ class AdminController extends BaseController
             $questionModel = new QuestionModel();
             $question = $questionModel->find($id);
             if ($question && !empty($question['image_url'])) {
-                $filePath = ROOTPATH . 'uploads/' . basename($question['image_url']);
-                if (is_file($filePath)) {
-                    @unlink($filePath);
-                }
+                self::deleteUploadedImage($question['image_url']);
             }
 
             $questionModel->delete($id);
@@ -750,10 +796,7 @@ class AdminController extends BaseController
             $questions = $questionModel->where('exam_id', $examId)->findAll();
             foreach ($questions as $question) {
                 if (!empty($question['image_url'])) {
-                    $filePath = ROOTPATH . 'uploads/' . basename($question['image_url']);
-                    if (is_file($filePath)) {
-                        @unlink($filePath);
-                    }
+                    self::deleteUploadedImage($question['image_url']);
                 }
             }
 
@@ -872,17 +915,19 @@ class AdminController extends BaseController
                 return $this->respond(['success' => false, 'message' => 'Invalid data URI format'], 400);
             }
 
-            $uploadDir = ROOTPATH . 'uploads/';
+            $uploadDir = ROOTPATH . 'public/uploads/';
             if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
+                mkdir($uploadDir, 0775, true);
             }
 
-            $cleanFileName = preg_replace('/[^a-zA-Z0-9_.-]/', '_', $fileName);
-            if (preg_match('/^[_-]+\.[a-zA-Z0-9]+$/', $cleanFileName) || trim($cleanFileName, ' _.-') === '') {
-                $ext = pathinfo($fileName, PATHINFO_EXTENSION);
-                $cleanFileName = 'image.' . ($ext ?: 'png');
+            // Force a safe image extension from the detected data-URI type and
+            // discard any user-supplied extension to prevent executable uploads (.php etc.)
+            $baseName = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo(trim($fileName), PATHINFO_FILENAME));
+            $baseName = trim($baseName, '_');
+            if ($baseName === '') {
+                $baseName = 'image';
             }
-            $uniqueFileName = time() . '_' . $cleanFileName;
+            $uniqueFileName = time() . '_' . substr($baseName, 0, 80) . '.' . $type;
             $filePath = $uploadDir . $uniqueFileName;
 
             if (file_put_contents($filePath, $data)) {
@@ -902,9 +947,7 @@ class AdminController extends BaseController
             $this->checkAuth();
             $url = $this->request->getPost('url') ?? '';
             if (!empty($url)) {
-                $filePath = ROOTPATH . 'uploads/' . basename($url);
-                if (is_file($filePath)) {
-                    @unlink($filePath);
+                if (self::deleteUploadedImage($url)) {
                     return $this->respond(['success' => true, 'message' => 'ลบไฟล์รูปภาพสำเร็จ']);
                 }
             }
@@ -989,10 +1032,12 @@ class AdminController extends BaseController
                         }
                     }
 
-                    if ($scoreUpdated || $recalculatedScore != $res['score']) {
+                    // Only rewrite when answers_json content actually changed,
+                    // so manually adjusted scores (updateScoreDirect) are preserved.
+                    if ($scoreUpdated) {
                         $res['score'] = $recalculatedScore;
                         $res['answers_json'] = json_encode($answers, JSON_UNESCAPED_UNICODE);
-                        
+
                         $resultModel->update($res['id'], [
                             'score' => $recalculatedScore,
                             'answers_json' => $res['answers_json']

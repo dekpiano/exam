@@ -398,6 +398,10 @@
     var keydownBlocker = null;
     var examId = "<?= $examId ?>";
     var statusInterval = null;
+    var isPaused = false;
+    var questionTimeLeft = 0;
+    var pausedSwal = null;
+    var isSubmitting = false;
 
     window.onload = () => {
         attemptFullscreen();
@@ -461,20 +465,28 @@
             initOverallTimer();
         }
 
-        // Periodically check if exam is cancelled or reset by teacher
+        // Periodically check if exam is cancelled, paused, or reset by teacher
         statusInterval = setInterval(async () => {
             if (!isExamActive) return;
             try {
                 const response = await fetch(`/api/exam/status?examId=${examId}`);
                 const res = await response.json();
-                if (res.examStatus !== 'Started' && isExamActive) {
+                const st = res.examStatus;
+
+                if (st === 'Paused') {
+                    if (!isPaused) enterPausedState();
+                    return;
+                }
+                if (isPaused) exitPausedState();
+
+                if (st !== 'Started' && isExamActive) {
                     isExamActive = false;
                     clearInterval(timerInterval);
                     clearInterval(overallTimerInterval);
                     clearInterval(statusInterval);
                     if (blurHandler) window.removeEventListener('blur', blurHandler);
                     if (visibilityHandler) document.removeEventListener('visibilitychange', visibilityHandler);
-                    
+
                     Swal.fire({
                         icon: 'error',
                         title: 'การสอบถูกยกเลิก!',
@@ -611,8 +623,36 @@
         window.addEventListener('keydown', keydownBlocker, true);
     }
 
+    // ===== Pause / Resume (teacher-controlled) =====
+    function enterPausedState() {
+        isPaused = true;
+        clearInterval(timerInterval);
+        clearInterval(overallTimerInterval);
+        pausedSwal = Swal.fire({
+            icon: 'info',
+            title: 'การสอบถูกหยุดชั่วคราว',
+            html: 'คุณครูผู้คุมสอบหยุดการสอบชั่วคราว<br>โปรดรอสักครู่ ระบบจะกลับมาให้ทำข้อสอบต่อโดยอัตโนมัติ',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false
+        });
+    }
+
+    function exitPausedState() {
+        isPaused = false;
+        if (pausedSwal) { Swal.close(); pausedSwal = null; }
+        if (!isExamActive) return;
+        if (questionTimeLeft <= 0) questionTimeLeft = 1;
+        startQuestionTimer(questionTimeLeft);
+        if (examDurationSeconds > 0) {
+            initOverallTimer();
+        }
+        attemptFullscreen();
+    }
+
     async function handleCheating(reason) {
         if (!isExamActive) return;
+        if (isPaused) return;
 
         // ป้องกัน False Positive บนมือถือ (เช่น เลื่อนจอใน LINE แล้วเกิด blur แต่หน้าจอยังแสดงอยู่)
         if (typeof reason !== 'string' && document.visibilityState === 'visible') {
@@ -839,10 +879,13 @@
     }
 
     // ===== Timer =====
-    function startQuestionTimer() {
+    function startQuestionTimer(startFrom) {
         clearInterval(timerInterval);
         const currentQ = questions[currentQuestionIndex];
-        let timeLeft = currentQ.type === 'writing' ? timeLimitWriting : timeLimitChoice;
+        let timeLeft = (typeof startFrom === 'number' && startFrom > 0)
+            ? Math.floor(startFrom)
+            : (currentQ.type === 'writing' ? timeLimitWriting : timeLimitChoice);
+        questionTimeLeft = timeLeft;
 
         const timerEl = document.getElementById('timerNumber');
         const timerBox = document.getElementById('questionTimer');
@@ -861,13 +904,14 @@
         }
 
         timerInterval = setInterval(() => {
-            timeLeft--;
-            timerEl.textContent = timeLeft;
-            if (timeLeft <= 10) {
+            questionTimeLeft--;
+            timeLeft = questionTimeLeft;
+            timerEl.textContent = questionTimeLeft;
+            if (questionTimeLeft <= 10) {
                 timerBox.classList.add('warning');
                 timerEl.classList.add('timer-pulse');
             }
-            if (timeLeft <= 0) {
+            if (questionTimeLeft <= 0) {
                 clearInterval(timerInterval);
                 handleTimeOut();
             }
@@ -875,6 +919,7 @@
     }
 
     function handleTimeOut() {
+        if (!isExamActive || isPaused || isSubmitting) return;
         const currentQ = questions[currentQuestionIndex];
         
         if (currentQ.type === 'writing') {
@@ -960,46 +1005,50 @@
         if (!box || !display) return;
 
         box.classList.remove('hidden');
-        
-        function updateDisplay() {
-            if (!isExamActive) {
-                clearInterval(overallTimerInterval);
-                return;
-            }
-            if (overallTimeLeft <= 0) {
-                clearInterval(overallTimerInterval);
-                isExamActive = false;
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'หมดเวลาทำข้อสอบ!',
-                    text: 'หมดเวลาทำข้อสอบรวมแล้ว ระบบกำลังส่งคำตอบของท่านโดยอัตโนมัติ',
-                    allowOutsideClick: false,
-                    confirmButtonText: 'ตกลง'
-                }).then(() => {
-                    collectAnswer();
-                    finishExam();
-                });
-                return;
-            }
+        clearInterval(overallTimerInterval);
+        overallTimerTick();
+        overallTimerInterval = setInterval(overallTimerTick, 1000);
+    }
 
-            const m = Math.floor(overallTimeLeft / 60);
-            const s = overallTimeLeft % 60;
-            display.textContent = m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
-
-            if (overallTimeLeft <= 60) { // Warning: 1 minute left
-                box.style.borderColor = '#ef4444';
-                display.style.color = '#ef4444';
-                display.classList.add('timer-pulse');
-            }
-
-            overallTimeLeft--;
+    function overallTimerTick() {
+        const box = document.getElementById('overallTimerBox');
+        const display = document.getElementById('overallTimerNumber');
+        if (!box || !display || !isExamActive) {
+            clearInterval(overallTimerInterval);
+            return;
+        }
+        if (overallTimeLeft <= 0) {
+            clearInterval(overallTimerInterval);
+            isExamActive = false;
+            Swal.fire({
+                icon: 'warning',
+                title: 'หมดเวลาทำข้อสอบ!',
+                text: 'หมดเวลาทำข้อสอบรวมแล้ว ระบบกำลังส่งคำตอบของท่านโดยอัตโนมัติ',
+                allowOutsideClick: false,
+                confirmButtonText: 'ตกลง'
+            }).then(() => {
+                collectAnswer();
+                finishExam();
+            });
+            return;
         }
 
-        updateDisplay();
-        overallTimerInterval = setInterval(updateDisplay, 1000);
+        const m = Math.floor(overallTimeLeft / 60);
+        const s = overallTimeLeft % 60;
+        display.textContent = m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+
+        if (overallTimeLeft <= 60) { // Warning: 1 minute left
+            box.style.borderColor = '#ef4444';
+            display.style.color = '#ef4444';
+            display.classList.add('timer-pulse');
+        }
+
+        overallTimeLeft--;
     }
 
     async function finishExam() {
+        if (isSubmitting) return;
+        isSubmitting = true;
         isExamActive = false;
         clearInterval(timerInterval);
         clearInterval(overallTimerInterval);
@@ -1035,6 +1084,8 @@
     }
 
     async function finishExamWithCheating(reason) {
+        if (isSubmitting) return;
+        isSubmitting = true;
         isExamActive = false;
         clearInterval(timerInterval);
         clearInterval(overallTimerInterval);
