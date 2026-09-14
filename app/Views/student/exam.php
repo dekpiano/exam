@@ -915,6 +915,93 @@
       40%, 60% { transform: translate3d(5px, 0, 0); }
     }
 
+    /* Enemy Attack Animations (Enemy lunges down-left toward Pikachu) */
+    .enemy-attack-anim {
+      animation: enemyLunge 0.75s cubic-bezier(0.25, 1, 0.5, 1) !important;
+    }
+    @keyframes enemyLunge {
+      0% { transform: translate(0, 0); }
+      45% { transform: translate(-65px, 35px) scale(1.18); }
+      70% { transform: translate(-30px, 15px) scale(1.08); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+
+    /* Player Hit Animation (Pikachu takes hit, flashes red, shakes) */
+    .player-hit-anim {
+      animation: playerHit 0.75s ease-in-out !important;
+    }
+    @keyframes playerHit {
+      0%, 100% { transform: translate(0, 0); filter: brightness(1); }
+      15% { transform: translate(-10px, 6px); filter: brightness(1.9) drop-shadow(0 0 20px rgba(239, 68, 68, 0.95)); }
+      30% { transform: translate(10px, -6px); filter: brightness(1.7) drop-shadow(0 0 16px rgba(239, 68, 68, 0.8)); }
+      50% { transform: translate(-6px, 4px); filter: brightness(1.4); }
+      70% { transform: translate(4px, -3px); filter: brightness(1.15); }
+      85% { transform: translate(-2px, 1px); filter: brightness(1); }
+    }
+
+    /* Enemy Skill VFX: Dark Scratch / Claws */
+    .skill-enemy-scratch {
+      background: radial-gradient(circle, rgba(239, 68, 68, 0.9) 15%, rgba(185, 28, 28, 0.6) 45%, transparent 75%);
+      box-shadow: 0 0 45px rgba(239, 68, 68, 0.9), 0 0 75px rgba(185, 28, 28, 0.7);
+      animation: enemyScratchImpact 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+    }
+    .skill-enemy-scratch::before {
+      background: linear-gradient(135deg, transparent 40%, #ff4d4d 48%, #ffffff 50%, #ff4d4d 52%, transparent 60%);
+      clip-path: polygon(0% 40%, 100% 40%, 100% 60%, 0% 60%);
+      filter: drop-shadow(0 0 15px #ff4d4d) drop-shadow(0 0 25px #dc2626);
+      animation: enemyScratchCut 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .skill-enemy-scratch::after {
+      border: 3px solid rgba(254, 202, 202, 0.9);
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.8), inset 0 0 20px rgba(220, 38, 38, 0.6);
+      animation: enemyScratchRing 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+    @keyframes enemyScratchImpact {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+      25% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+      65% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.35); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
+    }
+    @keyframes enemyScratchCut {
+      0% { opacity: 0; transform: translate(60px, -60px) rotate(45deg) scale(0.4); }
+      30% { opacity: 1; transform: translate(0, 0) rotate(15deg) scale(1.3); }
+      65% { opacity: 0.85; transform: translate(-30px, 30px) rotate(-15deg) scale(1.1); }
+      100% { opacity: 0; transform: translate(-60px, 60px) rotate(-35deg) scale(0.8); }
+    }
+    @keyframes enemyScratchRing {
+      0% { opacity: 0; transform: scale(0.2); }
+      30% { opacity: 1; transform: scale(0.95); }
+      70% { opacity: 0.6; transform: scale(1.4); }
+      100% { opacity: 0; transform: scale(1.7); }
+    }
+
+    /* Floating Damage Numbers Popup */
+    .poke-damage-popup {
+      position: absolute;
+      top: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ef4444;
+      font-size: 1.35rem;
+      font-weight: 900;
+      text-shadow: 0 0 4px #000, 0 0 12px rgba(239, 68, 68, 0.95);
+      pointer-events: none;
+      z-index: 50;
+      white-space: nowrap;
+      animation: damageFloat 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .poke-damage-popup.player-critical {
+      color: #facc15;
+      font-size: 1.45rem;
+      text-shadow: 0 0 4px #000, 0 0 14px rgba(250, 204, 21, 0.95);
+    }
+    @keyframes damageFloat {
+      0% { opacity: 0; transform: translate(-50%, 15px) scale(0.6); }
+      20% { opacity: 1; transform: translate(-50%, -10px) scale(1.25); }
+      65% { opacity: 1; transform: translate(-50%, -30px) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50px) scale(0.8); }
+    }
+
     /* BATTLE BOX: Question & Move Commands */
     .poke-battle-box {
       background: #0f172a;
@@ -1272,9 +1359,10 @@
               <div class="poke-hp-track">
                 <div class="poke-hp-fill" id="pokeEnemyHpFill" style="width: 100%;"></div>
               </div>
+              <span id="pokeEnemyHpText" class="text-[9px] font-black text-slate-300 ml-1">100/100</span>
             </div>
           </div>
-          <div class="enemy-sprite-container">
+          <div class="enemy-sprite-container" id="pokeEnemySpriteContainer">
             <div class="enemy-pedestal"></div>
             <div class="enemy-sprite" id="pokeEnemySprite"></div>
             <div id="pokeSkillEffect" class="poke-skill-effect"></div>
@@ -1283,9 +1371,10 @@
 
         <!-- Player Platform (Bottom Left) -->
         <div class="player-platform-wrap">
-          <div class="player-sprite-container">
+          <div class="player-sprite-container" id="pokePlayerSpriteContainer">
             <div class="player-pedestal"></div>
             <div class="player-sprite" id="pokePlayerSprite"></div>
+            <div id="pokePlayerSkillEffect" class="poke-skill-effect"></div>
           </div>
           <div class="poke-status-card player">
             <div class="poke-name-row">
@@ -1299,6 +1388,7 @@
               <div class="poke-hp-track">
                 <div class="poke-hp-fill" id="pokePlayerHpFill" style="width: 100%;"></div>
               </div>
+              <span id="pokePlayerHpText" class="text-[9px] font-black text-slate-300 ml-1">100/100</span>
             </div>
             <div class="poke-exp-track">
               <div class="poke-exp-fill" id="pokePlayerExpFill" style="width: 0%;"></div>
@@ -1904,6 +1994,16 @@
         
         questionTimeLeft = timeLeft;
 
+        if (!isMapTimer) {
+            totalQuestionTime = timeLeft;
+            pokePlayerHp = 100;
+            isEnemyAttacking = false;
+            lastEnemyAttackTime = Date.now();
+            if (typeof updatePokeHpDisplays === 'function') {
+                updatePokeHpDisplays();
+            }
+        }
+
         const timerEl = document.getElementById('timerNumber');
         const timerBox = document.getElementById('questionTimer');
         timerEl.textContent = timeLeft;
@@ -1933,6 +2033,14 @@
                 timerBox.classList.add('warning');
                 timerEl.classList.add('timer-pulse');
             }
+
+            // Enemy random attack proportional to elapsed / decreasing time
+            if (!isMapTimer && currentExamMode === 'pokemon' && pokeSubStage === 'battle') {
+                if (typeof checkAndTriggerEnemyAttack === 'function') {
+                    checkAndTriggerEnemyAttack(questionTimeLeft, totalQuestionTime);
+                }
+            }
+
             if (questionTimeLeft <= 0) {
                 clearInterval(timerInterval);
                 handleTimeOut(isMapTimer);
@@ -2259,6 +2367,28 @@
             this.tone(100, 'square', 0.22, 0, 0.22);
             this.tone(55, 'sawtooth', 0.28, 0.04, 0.2);
         },
+        playEnemyAttack() {
+            if (this.muted) return;
+            this.init();
+            if (!this.ctx) return;
+            try {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(280, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(70, this.ctx.currentTime + 0.28);
+                gain.gain.setValueAtTime(0.16, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.28);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.28);
+            } catch (e) {}
+        },
+        playPlayerHit() {
+            this.tone(90, 'square', 0.22, 0, 0.22);
+            this.tone(45, 'sawtooth', 0.28, 0.03, 0.2);
+        },
         playLevelUp() {
             const notes = [261, 329, 392, 523, 659, 784, 1046];
             notes.forEach((freq, idx) => {
@@ -2352,6 +2482,10 @@
     var pokeSubStage = 'map'; // 'map' or 'battle'
     var selectedPokemonMoveIndex = null;
     var isPokeAttacking = false;
+    var pokePlayerHp = 100;
+    var isEnemyAttacking = false;
+    var lastEnemyAttackTime = 0;
+    var totalQuestionTime = 0;
 
     // View Mode Initialization
     function initExamViewMode() {
@@ -3435,19 +3569,37 @@
             enemyHpFill.style.width = '100%';
             enemyHpFill.style.backgroundColor = '#10b981';
         }
+        const enemyHpText = document.getElementById('pokeEnemyHpText');
+        if (enemyHpText) {
+            enemyHpText.textContent = '100/100';
+            enemyHpText.style.color = '#cbd5e1';
+        }
 
         // 3. Update Player Pikachu Info
         const playerSprite = document.getElementById('pokePlayerSprite');
         const playerLv = document.getElementById('pokePlayerLv');
         const playerExpFill = document.getElementById('pokePlayerExpFill');
         const playerHpFill = document.getElementById('pokePlayerHpFill');
+        const playerHpText = document.getElementById('pokePlayerHpText');
 
         if (playerSprite) {
             playerSprite.innerHTML = POKE_SPRITES.pikachuBack;
-            playerSprite.classList.remove('player-attack-anim');
+            playerSprite.classList.remove('player-attack-anim', 'player-hit-anim');
         }
         if (playerLv) playerLv.textContent = `Lv. ${5 + Math.floor(currentQuestionIndex * 1.5)}`;
-        if (playerHpFill) playerHpFill.style.width = '100%';
+        
+        // Reset player HP to 100 on each encounter
+        pokePlayerHp = 100;
+        isEnemyAttacking = false;
+        lastEnemyAttackTime = Date.now();
+        if (playerHpFill) {
+            playerHpFill.style.width = '100%';
+            playerHpFill.style.backgroundColor = '#10b981';
+        }
+        if (playerHpText) {
+            playerHpText.textContent = '100/100';
+            playerHpText.style.color = '#cbd5e1';
+        }
         if (playerExpFill) {
             const expPercent = Math.min(100, Math.floor(((current - 1) / total) * 100));
             playerExpFill.style.width = `${expPercent}%`;
@@ -3605,6 +3757,7 @@
     function executePokemonAttack() {
         if (isPokeAttacking) return;
         isPokeAttacking = true;
+        isEnemyAttacking = false;
 
         const playerSprite = document.getElementById('pokePlayerSprite');
         const enemySprite = document.getElementById('pokeEnemySprite');
@@ -3651,6 +3804,14 @@
                 enemyHpFill.style.width = '0%';
                 enemyHpFill.style.backgroundColor = '#ef4444';
             }
+            const enemyHpText = document.getElementById('pokeEnemyHpText');
+            if (enemyHpText) {
+                enemyHpText.textContent = '0/100';
+                enemyHpText.style.color = '#ef4444';
+            }
+
+            // Spawn Critical floating damage on enemy
+            spawnFloatingDamage('CRITICAL!', 'pokeEnemySpriteContainer', true);
 
             // Narrator announcement
             if (narrator) {
@@ -3695,6 +3856,187 @@
         }, 700);
     }
 
+    // ===== ENEMY DYNAMIC RANDOM ATTACK ENGINE =====
+    function checkAndTriggerEnemyAttack(timeLeft, totalTime) {
+        if (!isExamActive || isPaused || isSubmitting || isPokeAttacking || isEnemyAttacking) return;
+        if (typeof totalTime !== 'number' || totalTime <= 0) totalTime = 60;
+
+        const elapsed = totalTime - timeLeft;
+        // Grace period: allow 3 seconds at start of question for student to read
+        if (elapsed < 3) return;
+
+        const now = Date.now();
+        // Cooldown between attacks: gets tighter as time runs out
+        const minCooldown = (timeLeft <= 10) ? 2400 : (timeLeft <= 20 ? 3200 : 4200);
+        if (now - lastEnemyAttackTime < minCooldown) return;
+
+        // Attack probability increases smoothly as time decreases
+        const elapsedRatio = Math.min(1, Math.max(0, elapsed / totalTime)); // 0.0 -> 1.0
+        let attackChance = 0.22 + (elapsedRatio * 0.46);
+        if (timeLeft <= 10) {
+            attackChance = 0.80; // High urgency in the last 10 seconds
+        }
+
+        if (Math.random() < attackChance) {
+            executeEnemyRandomAttack();
+        }
+    }
+
+    function executeEnemyRandomAttack() {
+        if (isEnemyAttacking || isPokeAttacking || !isExamActive || isPaused || isSubmitting) return;
+        isEnemyAttacking = true;
+        lastEnemyAttackTime = Date.now();
+
+        const enemySprite = document.getElementById('pokeEnemySprite');
+        const playerSprite = document.getElementById('pokePlayerSprite');
+        const battleField = document.getElementById('pokeBattleField');
+        const playerHpFill = document.getElementById('pokePlayerHpFill');
+        const playerHpText = document.getElementById('pokePlayerHpText');
+        const playerSkillEffect = document.getElementById('pokePlayerSkillEffect');
+        const narrator = document.getElementById('pokeBattleNarrator');
+        const enemyData = POKE_ENEMIES[currentQuestionIndex % POKE_ENEMIES.length] || { name: 'โปเกมอนคู่แข่ง' };
+
+        // Slower answer = bigger damage
+        const isUrgent = (questionTimeLeft <= 10);
+        const damage = isUrgent
+            ? Math.floor(Math.random() * 10 + 15) // 15 - 24 damage
+            : Math.floor(Math.random() * 8 + 10); // 10 - 17 damage
+
+        // Floor at 5 HP so player survives until timeout
+        pokePlayerHp = Math.max(5, pokePlayerHp - damage);
+
+        // 1. Enemy lunges towards player Pikachu
+        if (enemySprite) {
+            enemySprite.classList.remove('enemy-attack-anim');
+            void enemySprite.offsetWidth;
+            enemySprite.classList.add('enemy-attack-anim');
+        }
+        PokeSoundFX.playEnemyAttack();
+
+        // 2. Impact at 350ms
+        setTimeout(() => {
+            if (!isExamActive || isPaused || isPokeAttacking) {
+                isEnemyAttacking = false;
+                return;
+            }
+
+            // Screen shake
+            if (battleField) {
+                battleField.classList.remove('screen-shake');
+                void battleField.offsetWidth;
+                battleField.classList.add('screen-shake');
+            }
+
+            // Player takes hit animation
+            if (playerSprite) {
+                playerSprite.classList.remove('player-hit-anim');
+                void playerSprite.offsetWidth;
+                playerSprite.classList.add('player-hit-anim');
+            }
+
+            // Enemy attack effect on player Pikachu
+            if (playerSkillEffect) {
+                playerSkillEffect.className = 'poke-skill-effect';
+                void playerSkillEffect.offsetWidth;
+                playerSkillEffect.classList.add('skill-enemy-scratch');
+            }
+
+            // Hit sound effect
+            PokeSoundFX.playPlayerHit();
+
+            // Spawn floating damage popup over player
+            spawnFloatingDamage(damage, 'pokePlayerSpriteContainer', false);
+
+            // Update Player HP Bar UI
+            if (playerHpFill) {
+                playerHpFill.style.width = `${pokePlayerHp}%`;
+                if (pokePlayerHp > 50) {
+                    playerHpFill.style.backgroundColor = '#10b981';
+                } else if (pokePlayerHp > 20) {
+                    playerHpFill.style.backgroundColor = '#f59e0b';
+                } else {
+                    playerHpFill.style.backgroundColor = '#ef4444';
+                }
+            }
+            if (playerHpText) {
+                playerHpText.textContent = `${pokePlayerHp}/100`;
+                if (pokePlayerHp <= 20) {
+                    playerHpText.style.color = '#ef4444';
+                } else if (pokePlayerHp <= 50) {
+                    playerHpText.style.color = '#f59e0b';
+                } else {
+                    playerHpText.style.color = '#cbd5e1';
+                }
+            }
+
+            // Narrator status announcement
+            if (narrator) {
+                narrator.style.display = 'block';
+                if (pokePlayerHp <= 20) {
+                    narrator.innerHTML = `⚠️ <b>${enemyData.name}</b> โจมตีหนัก! ปิกาจูเหลือเพียง <b>${pokePlayerHp} HP</b>! รีบเลือกคำตอบเพื่อสวนกลับ!`;
+                } else {
+                    narrator.innerHTML = `⚔️ <b>${enemyData.name}</b> ฉวยโอกาสที่คิดนาน โจมตีใส่ปิกาจู <span style="color:#ef4444; font-weight:900;">(-${damage} HP)</span> ยิ่งคิดนานศัตรูยิ่งโจมตีถี่ขึ้น!`;
+                }
+            }
+        }, 350);
+
+        // 3. Reset animation classes after attack completes
+        setTimeout(() => {
+            if (enemySprite) enemySprite.classList.remove('enemy-attack-anim');
+            if (playerSprite) playerSprite.classList.remove('player-hit-anim');
+            if (battleField) battleField.classList.remove('screen-shake');
+            isEnemyAttacking = false;
+        }, 750);
+    }
+
+    function spawnFloatingDamage(dmg, containerId, isCrit = false) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const popup = document.createElement('div');
+        popup.className = 'poke-damage-popup' + (isCrit ? ' player-critical' : '');
+        popup.textContent = (typeof dmg === 'number') ? `-${dmg}` : dmg;
+        container.appendChild(popup);
+        setTimeout(() => {
+            if (popup && popup.parentElement) popup.remove();
+        }, 920);
+    }
+
+    function updatePokeHpDisplays() {
+        const playerHpFill = document.getElementById('pokePlayerHpFill');
+        const playerHpText = document.getElementById('pokePlayerHpText');
+        const enemyHpFill = document.getElementById('pokeEnemyHpFill');
+        const enemyHpText = document.getElementById('pokeEnemyHpText');
+
+        if (playerHpFill) {
+            playerHpFill.style.width = `${pokePlayerHp}%`;
+            if (pokePlayerHp > 50) {
+                playerHpFill.style.backgroundColor = '#10b981';
+            } else if (pokePlayerHp > 20) {
+                playerHpFill.style.backgroundColor = '#f59e0b';
+            } else {
+                playerHpFill.style.backgroundColor = '#ef4444';
+            }
+        }
+        if (playerHpText) {
+            playerHpText.textContent = `${pokePlayerHp}/100`;
+            if (pokePlayerHp <= 20) {
+                playerHpText.style.color = '#ef4444';
+            } else if (pokePlayerHp <= 50) {
+                playerHpText.style.color = '#f59e0b';
+            } else {
+                playerHpText.style.color = '#cbd5e1';
+            }
+        }
+        if (enemyHpFill && !isPokeAttacking) {
+            enemyHpFill.style.width = '100%';
+            enemyHpFill.style.backgroundColor = '#10b981';
+        }
+        if (enemyHpText && !isPokeAttacking) {
+            enemyHpText.textContent = '100/100';
+            enemyHpText.style.color = '#cbd5e1';
+        }
+    }
+
     // Explicitly bind all functions to window for inline onclick handlers
     window.toggleSoundFx = toggleSoundFx;
     window.toggleExamViewMode = toggleExamViewMode;
@@ -3705,6 +4047,10 @@
     window.selectPokeMove = selectPokeMove;
     window.handlePokeWritingInput = handlePokeWritingInput;
     window.executePokemonAttack = executePokemonAttack;
+    window.checkAndTriggerEnemyAttack = checkAndTriggerEnemyAttack;
+    window.executeEnemyRandomAttack = executeEnemyRandomAttack;
+    window.spawnFloatingDamage = spawnFloatingDamage;
+    window.updatePokeHpDisplays = updatePokeHpDisplays;
   </script>
 </body>
 </html>
