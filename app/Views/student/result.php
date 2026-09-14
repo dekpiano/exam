@@ -137,10 +137,27 @@
         <h1 class="text-2xl font-extrabold bg-gradient-to-r from-pink-500 to-sky-400 bg-clip-text text-transparent">
           <?= esc($websiteName) ?>
         </h1>
-        <p class="text-sky-400 font-bold text-sm">
-          <?= esc($examType) ?>
-        </p>
-        <p class="text-slate-500 text-xs mt-1">ผู้สอบ:
+        <?php
+          $isMidterm = (mb_strpos($examType, 'กลางภาค') !== false);
+          $isFinal   = (mb_strpos($examType, 'ปลายภาค') !== false);
+          if ($isMidterm) {
+              $badgeClass = 'bg-gradient-to-r from-amber-500/25 via-orange-500/20 to-amber-500/25 text-amber-300 border border-amber-400/60 shadow-sm';
+              $badgeIcon  = '🎯';
+          } elseif ($isFinal) {
+              $badgeClass = 'bg-gradient-to-r from-purple-500/30 via-fuchsia-500/25 to-pink-500/25 text-purple-200 border border-purple-400/60 shadow-sm';
+              $badgeIcon  = '🏁';
+          } else {
+              $badgeClass = 'bg-sky-500/20 text-sky-300 border border-sky-400/50 shadow-sm';
+              $badgeIcon  = '📝';
+          }
+        ?>
+        <div class="mt-2 mb-1">
+          <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-black <?= $badgeClass ?>">
+            <span><?= $badgeIcon ?></span>
+            <span><?= esc($examType) ?></span>
+          </span>
+        </div>
+        <p class="text-slate-400 text-xs mt-1">ผู้สอบ:
           <?= esc($studentName) ?>
         </p>
       </div>

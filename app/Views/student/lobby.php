@@ -146,9 +146,31 @@
       <!-- Exam Info Card -->
       <div class="glass-card p-6 flex flex-col justify-between items-center text-center h-full relative">
         <div class="w-full">
-          <div class="flex items-center justify-center w-14 h-14 rounded-2xl bg-pink-500/10 text-pink-500 text-2xl mb-4 mx-auto pulse-glow">
+          <div class="flex items-center justify-center w-14 h-14 rounded-2xl bg-pink-500/10 text-pink-500 text-2xl mb-3 mx-auto pulse-glow">
             ⏳
           </div>
+
+          <?php
+            $isMidterm = (mb_strpos($examType, 'กลางภาค') !== false);
+            $isFinal   = (mb_strpos($examType, 'ปลายภาค') !== false);
+            if ($isMidterm) {
+                $badgeClass = 'bg-gradient-to-r from-amber-500/25 via-orange-500/20 to-amber-500/25 text-amber-300 border border-amber-400/60 shadow-[0_0_15px_rgba(245,158,11,0.25)]';
+                $badgeIcon  = '🎯';
+            } elseif ($isFinal) {
+                $badgeClass = 'bg-gradient-to-r from-purple-500/30 via-fuchsia-500/25 to-pink-500/25 text-purple-200 border border-purple-400/60 shadow-[0_0_15px_rgba(168,85,247,0.25)]';
+                $badgeIcon  = '🏁';
+            } else {
+                $badgeClass = 'bg-sky-500/20 text-sky-300 border border-sky-400/50 shadow-[0_0_10px_rgba(14,165,233,0.15)]';
+                $badgeIcon  = '📝';
+            }
+          ?>
+          <div class="mb-2.5">
+            <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black tracking-wide <?= $badgeClass ?>">
+              <span class="text-sm"><?= $badgeIcon ?></span>
+              <span><?= esc($examType) ?></span>
+            </span>
+          </div>
+
           <h2 class="text-2xl font-extrabold text-white mb-2 leading-snug"><?= esc($subjectName) ?></h2>
           <div class="inline-flex flex-wrap gap-2 justify-center mb-6">
             <span class="px-3 py-1 bg-slate-800 text-slate-300 border border-white/5 rounded-full text-xs font-bold">รหัสวิชา: <?= esc($subjectCode) ?></span>

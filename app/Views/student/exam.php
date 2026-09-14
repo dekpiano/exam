@@ -344,7 +344,12 @@
   <!-- ===== PROGRESS ===== -->
   <div class="progress-section">
     <div class="progress-info">
-      <span class="progress-label" id="examSubject"><?= esc($examType) ?></span>
+      <?php
+        $isMidterm = (mb_strpos($examType, 'กลางภาค') !== false);
+        $isFinal   = (mb_strpos($examType, 'ปลายภาค') !== false);
+        $typeTag   = $isMidterm ? '🎯 ' : ($isFinal ? '🏁 ' : '📝 ');
+      ?>
+      <span class="progress-label" id="examSubject"><?= $typeTag . esc($examType) ?></span>
       <span class="progress-value" id="examProgress">ข้อที่ 1 / --</span>
     </div>
     <div class="progress-track">

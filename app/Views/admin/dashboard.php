@@ -227,8 +227,48 @@
         </div>
       </div>
 
-      <!-- Grid of Subject Cards -->
-      <div id="exam-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+      <!-- Teacher Exams Filter & Search Bar -->
+      <div class="glass-panel rounded-2xl p-4 border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="relative w-full sm:w-80">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 text-xs">🔍</span>
+          <input type="text" id="teacherExamSearch" oninput="renderLobbyScreen()"
+            class="w-full pl-9 pr-4 py-2 bg-black/40 border border-white/10 rounded-xl text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 transition-colors"
+            placeholder="ค้นหาชื่อวิชา รหัสวิชา หรือรอบสอบ...">
+        </div>
+        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <!-- Academic Year Filter for Teacher (Defaults to latest year always) -->
+          <div class="flex items-center gap-1.5 bg-black/40 border border-white/10 px-3 py-1.5 rounded-xl">
+            <span class="text-xs font-black text-slate-300 flex items-center gap-1">
+              <span>📅</span> ปีการศึกษา:
+            </span>
+            <select id="teacherYearFilter" onchange="onTeacherYearFilterChange()"
+              class="bg-slate-900 border border-pink-500/30 text-pink-300 text-xs font-black rounded-lg px-2.5 py-1 outline-none focus:border-pink-500 cursor-pointer">
+              <!-- populated dynamically via JS -->
+            </select>
+          </div>
+
+          <span class="text-xs font-bold text-slate-400 mr-1 hidden sm:inline">รอบสอบ:</span>
+          <button type="button" onclick="setTeacherExamFilter('all')" id="t-filter-all"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/20 bg-white/20 text-white shadow-md cursor-pointer flex items-center gap-1.5">
+            🌟 ทั้งหมด
+          </button>
+          <button type="button" onclick="setTeacherExamFilter('กลางภาค')" id="t-filter-midterm"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 cursor-pointer flex items-center gap-1.5">
+            🎯 สอบกลางภาค
+          </button>
+          <button type="button" onclick="setTeacherExamFilter('ปลายภาค')" id="t-filter-final"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border border-purple-500/40 bg-purple-500/10 text-purple-200 hover:bg-purple-500/20 cursor-pointer flex items-center gap-1.5">
+            🏁 สอบปลายภาค
+          </button>
+          <button type="button" onclick="setTeacherExamFilter('other')" id="t-filter-other"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border border-sky-500/40 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 cursor-pointer flex items-center gap-1.5">
+            📝 สอบอื่นๆ
+          </button>
+        </div>
+      </div>
+
+      <!-- Subject Cards Container (Separated by Midterm & Final Sections) -->
+      <div id="exam-cards-grid" class="space-y-10 pt-2">
         <!-- Populated dynamically via JS -->
       </div>
     </div>
@@ -250,6 +290,7 @@
                 class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-500/10 text-slate-400 border border-slate-500/20">Waiting</span>
               <span id="workspace-subject-area" class="text-[10px] text-slate-400 font-bold">Area</span>
             </div>
+            <div id="workspace-subject-type-badge" class="mt-2 pt-2 border-t border-white/5"></div>
           </div>
 
           <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-1">เมนูการจัดการ</p>
@@ -765,7 +806,11 @@
                 </div>
               </div>
 
-              <div class="flex justify-end pt-4 border-t border-white/5">
+              <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/5">
+                <button type="button" onclick="duplicateCurrentExam()"
+                  class="px-5 py-3.5 bg-sky-500/15 hover:bg-sky-500/25 text-sky-400 hover:text-sky-300 font-bold rounded-xl text-xs sm:text-sm border border-sky-500/30 transition-all flex items-center gap-2 cursor-pointer shadow-sm">
+                  📋 คัดลอกวิชานี้เป็นวิชาใหม่
+                </button>
                 <button type="submit"
                   class="px-8 py-3.5 bg-gradient-to-r from-pink-500 to-sky-400 hover:scale-[1.02] active:scale-[0.98] transition-all text-white font-black rounded-xl text-sm shadow-lg shadow-pink-500/20 cursor-pointer">
                   💾 บันทึกการตั้งค่าวิชาสอบ
@@ -907,10 +952,153 @@
         const res = await response.json();
         if (res.success && res.exams) {
           globalExamsList = res.exams;
+          initTeacherYearFilter();
         }
       } catch (e) {
         console.error("Failed to load exams list", e);
       }
+    }
+
+    var teacherExamFilter = 'all';
+    var teacherSelectedYear = 'latest';
+
+    function initTeacherYearFilter() {
+      const yearSelect = document.getElementById('teacherYearFilter');
+      if (!yearSelect) return;
+
+      // Extract unique academic years and sort descending
+      const years = [];
+      globalExamsList.forEach(e => {
+        const y = (e.academic_year || '').trim();
+        if (y && !years.includes(y)) years.push(y);
+      });
+      years.sort().reverse();
+
+      if (years.length === 0) {
+        yearSelect.innerHTML = '<option value="all">ทุกปีการศึกษา</option>';
+        teacherSelectedYear = 'all';
+        return;
+      }
+
+      const latestYear = years[0];
+      if (teacherSelectedYear === 'latest' || !years.includes(teacherSelectedYear)) {
+        teacherSelectedYear = latestYear;
+      }
+
+      let optHtml = '';
+      years.forEach((y, idx) => {
+        const isSel = (teacherSelectedYear === y) ? 'selected' : '';
+        optHtml += `<option value="${escapeHtml(y)}" ${isSel}>${escapeHtml(y)}${idx === 0 ? ' (ล่าสุด)' : ''}</option>`;
+      });
+      optHtml += `<option value="all" ${teacherSelectedYear === 'all' ? 'selected' : ''}>🌟 ทุกปีการศึกษา</option>`;
+      yearSelect.innerHTML = optHtml;
+    }
+
+    function onTeacherYearFilterChange() {
+      const yearSelect = document.getElementById('teacherYearFilter');
+      if (yearSelect) {
+        teacherSelectedYear = yearSelect.value;
+      }
+      renderLobbyScreen();
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function setTeacherExamFilter(type) {
+      teacherExamFilter = type;
+      ['all', 'midterm', 'final', 'other'].forEach(t => {
+        const btn = document.getElementById('t-filter-' + t);
+        if (btn) {
+          btn.classList.remove('bg-white/20', 'text-white', 'shadow-md', 'border-white/30');
+          if (t === 'all') {
+            btn.classList.remove('bg-white/20', 'border-white/20');
+            btn.classList.add('bg-white/5', 'text-slate-300', 'border-white/10');
+          }
+        }
+      });
+      const targetId = type === 'all' ? 't-filter-all' : (type === 'กลางภาค' ? 't-filter-midterm' : (type === 'ปลายภาค' ? 't-filter-final' : 't-filter-other'));
+      const targetBtn = document.getElementById(targetId);
+      if (targetBtn) {
+        targetBtn.classList.remove('bg-white/5', 'text-slate-300', 'border-white/10');
+        targetBtn.classList.add('bg-white/20', 'text-white', 'shadow-md', 'border-white/30');
+      }
+      renderLobbyScreen();
+    }
+
+    function renderExamCardHTML(e) {
+      let statusColor = 'bg-slate-500/10 text-slate-400 border border-slate-500/20';
+      if (e.exam_status === 'Started') {
+        statusColor = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      } else if (e.exam_status === 'Finished') {
+        statusColor = 'bg-red-500/10 text-red-400 border border-red-500/20';
+      }
+
+      const isMidterm = (e.exam_type || '').includes('กลางภาค');
+      const isFinal = (e.exam_type || '').includes('ปลายภาค');
+
+      let typeBadgeClass = 'bg-sky-500/20 text-sky-300 border border-sky-400/50 shadow-[0_0_10px_rgba(14,165,233,0.15)]';
+      let typeIcon = '📝';
+      let cardBorderAccent = 'hover:border-pink-500/30';
+
+      if (isMidterm) {
+        typeBadgeClass = 'bg-gradient-to-r from-amber-500/25 via-orange-500/20 to-amber-500/25 text-amber-300 border border-amber-400/60 shadow-[0_0_12px_rgba(245,158,11,0.25)]';
+        typeIcon = '🎯';
+        cardBorderAccent = 'hover:border-amber-400/60 hover:shadow-amber-500/10';
+      } else if (isFinal) {
+        typeBadgeClass = 'bg-gradient-to-r from-purple-500/30 via-fuchsia-500/25 to-pink-500/25 text-purple-200 border border-purple-400/60 shadow-[0_0_12px_rgba(168,85,247,0.25)]';
+        typeIcon = '🏁';
+        cardBorderAccent = 'hover:border-purple-400/60 hover:shadow-purple-500/10';
+      }
+
+      return `
+        <div class="glass-panel rounded-3xl p-6 border border-white/5 ${cardBorderAccent} transition-all flex flex-col justify-between hover:scale-[1.02] shadow-lg group">
+          <div>
+            <div class="flex justify-between items-start gap-2 mb-2">
+              <span class="text-xs font-bold text-pink-400 font-mono">${escapeHtml(e.subject_code || '')}</span>
+              <span class="px-2 py-0.5 text-[10px] font-bold rounded-lg ${statusColor}">${escapeHtml(e.exam_status || 'Draft')}</span>
+            </div>
+
+            <!-- Highly Prominent Exam Type Badge & Semester Tag -->
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-black rounded-xl ${typeBadgeClass}">
+                <span>${typeIcon}</span> ${escapeHtml(e.exam_type || 'ทั่วไป')}
+              </span>
+              <span class="text-[10px] text-slate-300 font-bold bg-white/5 border border-white/10 px-2 py-0.5 rounded-lg">
+                เทอม ${escapeHtml(e.semester || '-')}/${escapeHtml(e.academic_year || '-')}
+              </span>
+            </div>
+
+            <h3 class="text-lg font-black text-white mb-2 truncate group-hover:text-pink-400 transition-colors" title="${escapeHtml(e.subject_name || '')}">
+              ${escapeHtml(e.subject_name || '')}
+            </h3>
+            <div class="space-y-1 text-xs text-slate-400 font-medium">
+              <p>🏫 กลุ่มสาระฯ: ${escapeHtml(e.learning_area || '-')}</p>
+              <p>🧑‍🏫 ผู้สอน: ${escapeHtml(e.teacher_name || '-')}</p>
+              <p>📚 ในคลัง: ปรนัย ${e.choice_count || 0} ข้อ &nbsp;/&nbsp; อัตนัย ${e.writing_count || 0} ข้อ</p>
+              <p>🕒 สุ่มสอบ: ${e.num_questions || 0} ข้อ (สิทธิ์สอบ ${e.max_attempts || 1} ครั้ง)</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-2 mt-6 pt-4 border-t border-white/5">
+            <a href="/teacher/questions?exam_id=${e.id}" class="col-span-2 py-2.5 bg-gradient-to-r from-pink-500 to-sky-400 hover:from-pink-600 hover:to-sky-500 text-white font-bold rounded-xl text-xs transition-all text-center flex items-center justify-center gap-1">
+              ⚙️ จัดการข้อสอบ
+            </a>
+            <button onclick='duplicateExamModal(${JSON.stringify(e)})' class="py-2.5 bg-sky-500/10 hover:bg-sky-500/25 text-sky-400 hover:text-sky-300 font-bold rounded-xl text-xs border border-sky-500/30 transition-all text-center flex items-center justify-center gap-1 cursor-pointer" title="คัดลอกวิชาสอบนี้ (เปลี่ยนเทอม/ปี/ประเภท)">
+              📋
+            </button>
+            <button onclick='editExam(${JSON.stringify(e)})' class="py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold rounded-xl text-xs border border-white/10 transition-all text-center flex items-center justify-center cursor-pointer" title="แก้ไขวิชา">
+              ✏️
+            </button>
+          </div>
+        </div>
+      `;
     }
 
     function renderLobbyScreen() {
@@ -920,55 +1108,164 @@
       document.getElementById('workspace-screen').classList.add('hidden');
 
       const grid = document.getElementById('exam-cards-grid');
-      if (globalExamsList.length === 0) {
+
+      // 1. Filter exams by selected academic year
+      const yearFilteredList = globalExamsList.filter(e => {
+        const cardYear = (e.academic_year || '').trim();
+        if (teacherSelectedYear !== 'all' && teacherSelectedYear !== 'latest') {
+          return cardYear === teacherSelectedYear;
+        }
+        return true;
+      });
+
+      // 2. Filter exams list by search keyword
+      const searchInput = document.getElementById('teacherExamSearch');
+      const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+      const searchedList = yearFilteredList.filter(e => {
+        if (!searchVal) return true;
+        const cardYear = (e.academic_year || '').trim();
+        return (e.subject_name || '').toLowerCase().includes(searchVal) ||
+               (e.subject_code || '').toLowerCase().includes(searchVal) ||
+               (e.teacher_name || '').toLowerCase().includes(searchVal) ||
+               (e.exam_type || '').toLowerCase().includes(searchVal) ||
+               cardYear.includes(searchVal) ||
+               (e.learning_area || '').toLowerCase().includes(searchVal);
+      });
+
+      // 3. Partition into Midterm, Final, and Other exams
+      const midtermExams = searchedList.filter(e => (e.exam_type || '').includes('กลางภาค'));
+      const finalExams = searchedList.filter(e => (e.exam_type || '').includes('ปลายภาค'));
+      const otherExams = searchedList.filter(e => !(e.exam_type || '').includes('กลางภาค') && !(e.exam_type || '').includes('ปลายภาค'));
+
+      // 4. Update count badges on teacher filter bar
+      const btnAll = document.getElementById('t-filter-all');
+      const btnMid = document.getElementById('t-filter-midterm');
+      const btnFin = document.getElementById('t-filter-final');
+      const btnOth = document.getElementById('t-filter-other');
+
+      if (btnAll) btnAll.innerHTML = `🌟 ทั้งหมด <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 font-mono font-bold">${searchedList.length}</span>`;
+      if (btnMid) btnMid.innerHTML = `🎯 สอบกลางภาค <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500/30 text-amber-200 font-mono font-bold">${midtermExams.length}</span>`;
+      if (btnFin) btnFin.innerHTML = `🏁 สอบปลายภาค <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-purple-500/30 text-purple-200 font-mono font-bold">${finalExams.length}</span>`;
+      if (btnOth) {
+        btnOth.innerHTML = `📝 สอบอื่นๆ <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-sky-500/30 text-sky-200 font-mono font-bold">${otherExams.length}</span>`;
+        btnOth.style.display = otherExams.length > 0 ? 'inline-flex' : 'none';
+      }
+
+      // 5. Handle empty list state
+      if (searchedList.length === 0) {
         grid.innerHTML = `
-                <div class="col-span-full py-16 text-center glass-panel rounded-3xl border border-white/5">
-                   <span class="text-4xl">📚</span>
-                   <h3 class="text-lg font-bold text-white mt-4">ยังไม่มีรายวิชาสอบในระบบ</h3>
-                   <p class="text-xs text-slate-400 mt-2">กรุณากดปุ่ม "เพิ่มวิชาสอบใหม่" ด้านบนเพื่อเริ่มใช้งาน</p>
-                </div>
-            `;
+          <div class="col-span-full py-16 text-center glass-panel rounded-3xl border border-white/5">
+            <span class="text-4xl block mb-2">📚</span>
+            <h3 class="text-lg font-bold text-white">ไม่พบรายวิชาสอบที่ตรงกับเงื่อนไข</h3>
+            <p class="text-xs text-slate-400 mt-2">${globalExamsList.length === 0 ? 'กรุณากดปุ่ม "➕ เพิ่มวิชาสอบใหม่" ด้านบนเพื่อเริ่มใช้งาน' : 'กรุณาลองเปลี่ยนคำค้นหา หรือสลับปีการศึกษา'}</p>
+          </div>
+        `;
         return;
       }
 
-      let html = '';
-      globalExamsList.forEach(e => {
-        let statusColor = 'bg-slate-500/10 text-slate-400 border border-slate-500/20';
-        if (e.exam_status === 'Started') {
-          statusColor = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
-        } else if (e.exam_status === 'Finished') {
-          statusColor = 'bg-red-500/10 text-red-400 border border-red-500/20';
-        }
+      // 6. Build separated sections HTML
+      let sectionsHtml = '';
 
-        html += `
-                <div class="glass-panel rounded-3xl p-6 border border-white/5 hover:border-pink-500/30 transition-all flex flex-col justify-between hover:scale-[1.02] shadow-lg group">
-                    <div>
-                        <div class="flex justify-between items-start gap-2 mb-3">
-                            <span class="text-xs font-bold text-pink-400">${e.subject_code}</span>
-                            <span class="px-2 py-0.5 text-[10px] font-bold rounded-lg ${statusColor}">${e.exam_status}</span>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-2 truncate group-hover:text-pink-400 transition-colors" title="${e.subject_name}">${e.subject_name}</h3>
-                        <div class="space-y-1 text-xs text-slate-400 font-medium">
-                            <p>🏫 กลุ่มสาระฯ: ${e.learning_area}</p>
-                            <p>🧑‍🏫 ผู้สอน: ${e.teacher_name}</p>
-                            <p>📅 ปีการศึกษา/ภาคเรียน: ${e.academic_year || '-'}/${e.semester || '-'}</p>
-                            <p>📝 ประเภทสอบ: ${e.exam_type}</p>
-                            <p>📚 ในคลัง: ปรนัย ${e.choice_count || 0} ข้อ &nbsp;/&nbsp; อัตนัย ${e.writing_count || 0} ข้อ</p>
-                            <p>🕒 สุ่มสอบ: ${e.num_questions} ข้อ (สิทธิ์สอบ ${e.max_attempts} ครั้ง)</p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2 mt-6 pt-4 border-t border-white/5">
-                        <a href="/teacher/questions?exam_id=${e.id}" class="col-span-2 py-2.5 bg-gradient-to-r from-pink-500 to-sky-400 hover:from-pink-600 hover:to-sky-500 text-white font-bold rounded-xl text-xs transition-all text-center flex items-center justify-center gap-1">
-                            ⚙️ จัดการข้อสอบ
-                        </a>
-                        <button onclick='editExam(${JSON.stringify(e)})' class="py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 font-bold rounded-xl text-xs border border-white/10 transition-all text-center" title="แก้ไขวิชา">
-                            ✏️
-                        </button>
-                    </div>
+      // Section: Midterm Exams (🎯 สอบกลางภาค)
+      if (teacherExamFilter === 'all' || teacherExamFilter === 'กลางภาค') {
+        const hasCards = midtermExams.length > 0;
+        sectionsHtml += `
+          <section class="space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-amber-500/30 flex-wrap gap-2">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500/25 to-orange-500/20 border border-amber-500/40 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                  🎯
                 </div>
-            `;
-      });
-      grid.innerHTML = html;
+                <div>
+                  <div class="flex items-center gap-2.5">
+                    <h3 class="text-lg sm:text-xl font-black text-white tracking-wide">รายวิชาสอบกลางภาค (Midterm Exams)</h3>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm">
+                      ${midtermExams.length} วิชา
+                    </span>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-0.5">การสอบวัดผลสัมฤทธิ์ทางการเรียนช่วงกลางภาคเรียน</p>
+                </div>
+              </div>
+            </div>
+
+            ${hasCards ? `
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${midtermExams.map(e => renderExamCardHTML(e)).join('')}
+              </div>
+            ` : `
+              <div class="py-10 text-center glass-panel rounded-2xl border border-white/5 text-slate-400 text-xs">
+                ยังไม่มีรายวิชาสำหรับการสอบกลางภาคในปีการศึกษานี้
+              </div>
+            `}
+          </section>
+        `;
+      }
+
+      // Section: Final Exams (🏁 สอบปลายภาค)
+      if (teacherExamFilter === 'all' || teacherExamFilter === 'ปลายภาค') {
+        const hasCards = finalExams.length > 0;
+        sectionsHtml += `
+          <section class="space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-purple-500/30 flex-wrap gap-2">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500/25 to-fuchsia-500/20 border border-purple-500/40 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+                  🏁
+                </div>
+                <div>
+                  <div class="flex items-center gap-2.5">
+                    <h3 class="text-lg sm:text-xl font-black text-white tracking-wide">รายวิชาสอบปลายภาค (Final Exams)</h3>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-500/20 text-purple-200 border border-purple-500/40 shadow-sm">
+                      ${finalExams.length} วิชา
+                    </span>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-0.5">การสอบประเมินผลสัมฤทธิ์ปลายภาคเรียน</p>
+                </div>
+              </div>
+            </div>
+
+            ${hasCards ? `
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${finalExams.map(e => renderExamCardHTML(e)).join('')}
+              </div>
+            ` : `
+              <div class="py-10 text-center glass-panel rounded-2xl border border-white/5 text-slate-400 text-xs">
+                ยังไม่มีรายวิชาสำหรับการสอบปลายภาคในปีการศึกษานี้
+              </div>
+            `}
+          </section>
+        `;
+      }
+
+      // Section: Other Exams (📝 สอบเก็บคะแนน / อื่นๆ)
+      if ((teacherExamFilter === 'all' && otherExams.length > 0) || teacherExamFilter === 'other') {
+        sectionsHtml += `
+          <section class="space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-sky-500/30 flex-wrap gap-2">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-500/25 to-indigo-500/20 border border-sky-500/40 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(14,165,233,0.2)]">
+                  📝
+                </div>
+                <div>
+                  <div class="flex items-center gap-2.5">
+                    <h3 class="text-lg sm:text-xl font-black text-white tracking-wide">แบบทดสอบเก็บคะแนน / อื่นๆ</h3>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm">
+                      ${otherExams.length} วิชา
+                    </span>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-0.5">แบบทดสอบก่อนเรียน หลังเรียน หรือสอบเก็บคะแนนย่อย</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              ${otherExams.map(e => renderExamCardHTML(e)).join('')}
+            </div>
+          </section>
+        `;
+      }
+
+      grid.innerHTML = sectionsHtml;
     }
 
     function enterWorkspace(examId, tabName = 'questions') {
@@ -986,6 +1283,19 @@
       document.getElementById('workspace-subject-name').textContent = exam.subject_name;
       document.getElementById('workspace-subject-status').textContent = exam.exam_status;
       document.getElementById('workspace-subject-area').textContent = `${exam.learning_area} (${exam.academic_year || '-'}/${exam.semester || '-'})`;
+
+      const typeEl = document.getElementById('workspace-subject-type-badge');
+      if (typeEl) {
+        const isMidterm = (exam.exam_type || '').includes('กลางภาค');
+        const isFinal = (exam.exam_type || '').includes('ปลายภาค');
+        if (isMidterm) {
+          typeEl.innerHTML = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-400/60 shadow-sm">🎯 ${exam.exam_type}</span>`;
+        } else if (isFinal) {
+          typeEl.innerHTML = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black bg-purple-500/20 text-purple-200 border border-purple-400/60 shadow-sm">🏁 ${exam.exam_type}</span>`;
+        } else {
+          typeEl.innerHTML = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black bg-sky-500/20 text-sky-300 border border-sky-400/40">📝 ${exam.exam_type}</span>`;
+        }
+      }
 
       // Set status badge style
       const statusEl = document.getElementById('workspace-subject-status');
@@ -1082,6 +1392,289 @@
     function editExam(e) {
       if (window.event) window.event.stopPropagation();
       showExamModalSwal(e, '🏫 แก้ไขรายวิชาสอบ');
+    }
+
+    function duplicateCurrentExam() {
+      const exam = globalExamsList.find(e => e.id === activeExamId);
+      if (exam) {
+        duplicateExamModal(exam);
+      } else {
+        Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่พบข้อมูลวิชาที่เลือก' });
+      }
+    }
+
+    function duplicateExamModal(e) {
+      if (window.event) window.event.stopPropagation();
+      const choiceCount = parseInt(e.choice_count) || 0;
+      const writingCount = parseInt(e.writing_count) || 0;
+      const totalQuestions = choiceCount + writingCount;
+
+      const isMidterm = (e.exam_type || '').includes('กลางภาค');
+      const isFinal = (e.exam_type || '').includes('ปลายภาค');
+      const typeBadgeClass = isMidterm 
+        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' 
+        : (isFinal ? 'bg-purple-500/20 text-purple-300 border-purple-500/40' : 'bg-sky-500/20 text-sky-300 border-sky-500/40');
+      const typeBadgeIcon = isMidterm ? '🎯' : (isFinal ? '🏁' : '📝');
+
+      Swal.fire({
+        title: '📋 คัดลอกรายวิชาสอบ (Duplicate Exam)',
+        html: `
+          <div class="text-left space-y-4 max-h-[75vh] overflow-y-auto w-full pr-1 font-sans">
+            
+            <!-- Source Exam Info Card -->
+            <div class="bg-slate-800/90 border-2 border-slate-700/80 rounded-2xl p-4 shadow-inner">
+              <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                <span class="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>📄</span> วิชาต้นฉบับที่จะคัดลอก
+                </span>
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black border ${typeBadgeClass}">
+                    <span>${typeBadgeIcon}</span>
+                    <span>${escapeHtml(e.exam_type || 'ทั่วไป')}</span>
+                  </span>
+                  <span class="text-xs font-bold text-slate-300 bg-slate-700/80 px-2 py-0.5 rounded-md border border-slate-600">
+                    เทอม ${escapeHtml(e.semester || '-')}/${escapeHtml(e.academic_year || '-')}
+                  </span>
+                </div>
+              </div>
+              <h4 class="text-base font-black text-white leading-snug">${escapeHtml(e.subject_name)}</h4>
+              <div class="flex items-center gap-3 mt-1 text-xs text-slate-300 font-semibold flex-wrap">
+                <span class="text-sky-400 font-bold font-mono">รหัส: ${escapeHtml(e.subject_code || '-')}</span>
+                <span class="text-slate-500">•</span>
+                <span>กลุ่มสาระฯ: ${escapeHtml(e.learning_area || '-')}</span>
+              </div>
+              <div class="mt-2 pt-2 border-t border-slate-700/60 flex items-center justify-between text-xs">
+                <span class="text-emerald-400 font-bold flex items-center gap-1">
+                  <span>📊</span> คลังข้อสอบเดิม: ${totalQuestions > 0 ? `${totalQuestions} ข้อ (ปรนัย ${choiceCount} / อัตนัย ${writingCount})` : 'ยังไม่มีข้อสอบ'}
+                </span>
+                <span class="text-slate-400 text-[11px]">เกณฑ์ผ่าน ${escapeHtml(e.passing_percentage || '50')}%</span>
+              </div>
+            </div>
+
+            <!-- New Subject Info -->
+            <div>
+              <label class="block text-xs font-extrabold text-slate-200 mb-1.5 flex items-center gap-1">
+                <span class="text-pink-400">✏️</span> ชื่อวิชาใหม่ <span class="text-rose-400 font-bold">*</span>
+              </label>
+              <input type="text" id="swal-dup-name" value="${escapeHtml(e.subject_name)} (คัดลอก)" 
+                class="w-full bg-slate-800 border-2 border-slate-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold outline-none transition-all placeholder:text-slate-500" 
+                placeholder="ระบุชื่อวิชาสำหรับวิชาใหม่" required>
+            </div>
+
+            <!-- Subject Code & Area -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-extrabold text-slate-200 mb-1.5 flex items-center gap-1">
+                  <span class="text-sky-400">🔖</span> รหัสวิชา <span class="text-rose-400 font-bold">*</span>
+                </label>
+                <input type="text" id="swal-dup-code" value="${escapeHtml(e.subject_code || '')}" 
+                  class="w-full bg-slate-800 border-2 border-slate-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold outline-none transition-all placeholder:text-slate-500 font-mono" 
+                  placeholder="เช่น ค31101" required>
+              </div>
+              <div>
+                <label class="block text-xs font-extrabold text-slate-400 mb-1.5 flex items-center gap-1">
+                  <span>🏢</span> กลุ่มสาระฯ (เดิม)
+                </label>
+                <input type="text" value="${escapeHtml(e.learning_area || '')}" disabled 
+                  class="w-full bg-slate-800/50 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-slate-400 font-semibold cursor-not-allowed">
+              </div>
+            </div>
+
+            <!-- Academic Year & Semester -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-extrabold text-slate-200 mb-1.5 flex items-center gap-1">
+                  <span class="text-amber-400">📅</span> ปีการศึกษา <span class="text-rose-400 font-bold">*</span>
+                </label>
+                <input type="text" id="swal-dup-year" value="${escapeHtml(e.academic_year || '')}" 
+                  class="w-full bg-slate-800 border-2 border-slate-600 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold outline-none transition-all placeholder:text-slate-500 font-mono" 
+                  placeholder="เช่น 2569" required>
+              </div>
+              <div>
+                <label class="block text-xs font-extrabold text-slate-200 mb-1.5 flex items-center gap-1">
+                  <span class="text-amber-400">🗓️</span> ภาคเรียนที่ (เทอม) <span class="text-rose-400 font-bold">*</span>
+                </label>
+                <select id="swal-dup-semester" 
+                  class="w-full bg-slate-800 border-2 border-slate-600 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold outline-none transition-all cursor-pointer">
+                  <option value="1" ${String(e.semester) === '1' ? 'selected' : ''}>ภาคเรียนที่ 1</option>
+                  <option value="2" ${String(e.semester) === '2' ? 'selected' : ''}>ภาคเรียนที่ 2</option>
+                  <option value="ฤดูร้อน" ${String(e.semester) === 'ฤดูร้อน' ? 'selected' : ''}>ภาคฤดูร้อน</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Exam Type & Round -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-extrabold text-slate-200 mb-1.5 flex items-center gap-1">
+                  <span class="text-purple-400">🎯</span> ประเภทการสอบ <span class="text-rose-400 font-bold">*</span>
+                </label>
+                <select id="swal-dup-type" 
+                  class="w-full bg-slate-800 border-2 border-slate-600 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 rounded-xl px-3.5 py-2.5 text-sm text-white font-black outline-none transition-all cursor-pointer">
+                  <option value="สอบกลางภาค" ${e.exam_type === 'สอบกลางภาค' ? 'selected' : ''}>🎯 สอบกลางภาค (Midterm)</option>
+                  <option value="สอบปลายภาค" ${e.exam_type === 'สอบปลายภาค' ? 'selected' : ''}>🏁 สอบปลายภาค (Final)</option>
+                  <option value="สอบเก็บคะแนนย่อย" ${e.exam_type === 'สอบเก็บคะแนนย่อย' ? 'selected' : ''}>📝 สอบเก็บคะแนนย่อย</option>
+                  <option value="ทดสอบก่อนเรียน" ${e.exam_type === 'ทดสอบก่อนเรียน' ? 'selected' : ''}>📖 ทดสอบก่อนเรียน</option>
+                  <option value="ทดสอบหลังเรียน" ${e.exam_type === 'ทดสอบหลังเรียน' ? 'selected' : ''}>📘 ทดสอบหลังเรียน</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-extrabold text-slate-200 mb-1.5 flex items-center gap-1">
+                  <span class="text-purple-400">🔄</span> รอบการสอบ
+                </label>
+                <input type="text" id="swal-dup-round" value="${escapeHtml(e.exam_round || '1')}" 
+                  class="w-full bg-slate-800 border-2 border-slate-600 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold outline-none transition-all placeholder:text-slate-500 font-mono" 
+                  placeholder="เช่น 1, 2">
+              </div>
+            </div>
+
+            <!-- Copy Questions Option (Card) -->
+            <div class="p-4 bg-gradient-to-br from-sky-950/70 via-slate-850 to-slate-900 border-2 border-sky-500/50 rounded-2xl shadow-lg shadow-sky-950/30">
+              <label class="flex items-start gap-3 cursor-pointer select-none">
+                <input type="checkbox" id="swal-dup-copy-q" checked 
+                  class="mt-1 w-5 h-5 rounded-md text-sky-500 focus:ring-sky-400 focus:ring-offset-slate-900 bg-slate-900 border-slate-500 cursor-pointer accent-sky-500">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-black text-sky-300">คัดลอกข้อสอบทั้งหมดในคลังมาด้วย</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-500/25 text-sky-300 border border-sky-500/40">แนะนำ</span>
+                  </div>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    ${totalQuestions > 0 
+                      ? `ระบบจะโคลนข้อสอบทั้งหมด <strong class="text-white font-black">${totalQuestions} ข้อ</strong> (ปรนัย ${choiceCount} ข้อ, อัตนัย ${writingCount} ข้อ) พร้อมตัวเลือกและเฉลยไปยังวิชาใหม่อัตโนมัติ` 
+                      : 'หากเลือกตัวเลือกนี้ ระบบจะโคลนข้อสอบทั้งหมดไปยังวิชาใหม่'}
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <!-- Info footnote -->
+            <div class="flex items-center gap-2 text-xs text-slate-300 bg-slate-800/80 px-3.5 py-2.5 rounded-xl border border-slate-700">
+              <span class="text-base">💡</span>
+              <span>วิชาที่คัดลอกใหม่จะอยู่ในสถานะ <strong class="text-amber-300 font-extrabold">"ฉบับร่าง (Draft)"</strong> เพื่อให้คุณครูตรวจทานหรือปรับแก้ข้อสอบก่อนเปิดสอบจริง</span>
+            </div>
+
+          </div>
+        `,
+        width: '680px',
+        background: '#0f172a',
+        color: '#ffffff',
+        showCancelButton: true,
+        confirmButtonText: '📋 ยืนยันคัดลอกวิชา',
+        cancelButtonText: 'ยกเลิก',
+        customClass: {
+          popup: 'border-2 border-slate-700/80 rounded-3xl shadow-2xl backdrop-blur-xl bg-slate-900 text-white',
+          title: 'text-lg font-black text-white text-left px-6 pt-5 pb-3 border-b border-slate-800 flex items-center gap-2',
+          htmlContainer: 'text-left px-6 py-3',
+          confirmButton: 'bg-gradient-to-r from-sky-500 via-indigo-600 to-indigo-700 hover:from-sky-400 hover:to-indigo-600 text-white font-extrabold rounded-xl px-6 py-3 border-none shadow-lg shadow-sky-500/25 cursor-pointer text-sm transition-all',
+          cancelButton: 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-xl px-5 py-3 border border-slate-600 cursor-pointer text-sm transition-all'
+        },
+        focusConfirm: false,
+        preConfirm: () => {
+          const name = document.getElementById('swal-dup-name').value.trim();
+          const code = document.getElementById('swal-dup-code').value.trim();
+          const year = document.getElementById('swal-dup-year').value.trim();
+          const semester = document.getElementById('swal-dup-semester').value.trim();
+          const type = document.getElementById('swal-dup-type').value;
+          const round = document.getElementById('swal-dup-round').value.trim() || '1';
+          const copyQ = document.getElementById('swal-dup-copy-q').checked;
+
+          if (!name || !code || !year || !semester) {
+            Swal.showValidationMessage('กรุณากรอกชื่อวิชา, รหัสวิชา, ปีการศึกษา และภาคเรียนให้ครบถ้วน');
+            return false;
+          }
+          return { name, code, year, semester, type, round, copyQ };
+        }
+      }).then(async (res) => {
+        if (!res.isConfirmed || !res.value) return;
+
+        Swal.fire({
+          title: 'กำลังคัดลอกวิชาสอบ...',
+          text: 'กรุณารอสักครู่ ระบบกำลังสร้างรายวิชาและโคลนข้อสอบ',
+          allowOutsideClick: false,
+          background: '#0f172a',
+          color: '#ffffff',
+          customClass: {
+            popup: 'border-2 border-slate-700/80 rounded-3xl shadow-2xl bg-slate-900',
+            title: 'text-lg font-black text-white'
+          },
+          didOpen: () => Swal.showLoading()
+        });
+
+        try {
+          const fd = new FormData();
+          fd.append('source_id', e.id);
+          fd.append('subject_name', res.value.name);
+          fd.append('subject_code', res.value.code);
+          fd.append('academic_year', res.value.year);
+          fd.append('semester', res.value.semester);
+          fd.append('exam_type', res.value.type);
+          fd.append('exam_round', res.value.round);
+          fd.append('copy_questions', res.value.copyQ ? 'true' : 'false');
+
+          const response = await fetch('/api/teacher/exams/duplicate', {
+            method: 'POST',
+            body: fd
+          });
+          const data = await response.json();
+          Swal.close();
+
+          if (data.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'คัดลอกรายวิชาสำเร็จ! 🎉',
+              html: `
+                <div class="text-center py-2">
+                  <p class="text-white text-base font-bold mb-2">${escapeHtml(data.message || 'สร้างวิชาใหม่เรียบร้อยแล้ว')}</p>
+                  <p class="text-xs text-slate-300">สถานะวิชาใหม่เป็น <strong class="text-amber-300">"ฉบับร่าง (Draft)"</strong> คุณครูสามารถเข้าไปตรวจทานหรือแก้ไขข้อสอบได้ทันที</p>
+                </div>
+              `,
+              background: '#0f172a',
+              color: '#ffffff',
+              showCancelButton: true,
+              confirmButtonText: '⚙️ ไปจัดการข้อสอบวิชาใหม่',
+              cancelButtonText: 'ดูรายการวิชาทั้งหมด',
+              customClass: {
+                popup: 'border-2 border-slate-700/80 rounded-3xl shadow-2xl bg-slate-900',
+                title: 'text-xl font-black text-white',
+                confirmButton: 'bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-400 hover:to-rose-500 text-white font-extrabold rounded-xl px-6 py-3 border-none shadow-lg shadow-pink-500/25 cursor-pointer text-sm',
+                cancelButton: 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-xl px-5 py-3 border border-slate-600 cursor-pointer text-sm'
+              }
+            }).then(actionRes => {
+              if (actionRes.isConfirmed && data.new_exam_id) {
+                window.location.href = `/teacher/questions?exam_id=${data.new_exam_id}`;
+              } else {
+                loadGlobalExams().then(() => renderLobbyScreen());
+              }
+            });
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'ไม่สามารถคัดลอกวิชาได้',
+              text: data.message || 'เกิดข้อผิดพลาดในการคัดลอกวิชา',
+              background: '#0f172a',
+              color: '#ffffff',
+              customClass: {
+                popup: 'border-2 border-slate-700/80 rounded-3xl shadow-2xl bg-slate-900',
+                title: 'text-lg font-black text-white',
+                confirmButton: 'bg-slate-800 text-white font-bold rounded-xl px-5 py-2.5 border border-slate-600'
+              }
+            });
+          }
+        } catch (err) {
+          Swal.close();
+          Swal.fire({ 
+            icon: 'error', 
+            title: 'เกิดข้อผิดพลาด', 
+            text: err.message,
+            background: '#0f172a',
+            color: '#ffffff',
+            customClass: {
+              popup: 'border-2 border-slate-700/80 rounded-3xl shadow-2xl bg-slate-900',
+              title: 'text-lg font-black text-white'
+            }
+          });
+        }
+      });
     }
 
     function showExamModalSwal(eData, title) {

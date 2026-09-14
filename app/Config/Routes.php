@@ -42,6 +42,7 @@ $routes->group('api/teacher', function($routes) {
     $routes->post('settings', 'AdminController::saveSettings');
     $routes->get('exams', 'AdminController::getExams');
     $routes->post('exams/save', 'AdminController::saveExam');
+    $routes->post('exams/duplicate', 'AdminController::duplicateExam');
     $routes->post('exams/update-status', 'AdminController::updateExamStatus');
     $routes->post('exams/update-policy', 'AdminController::updateJoinPolicy');
     $routes->post('exams/delete', 'AdminController::deleteExam');

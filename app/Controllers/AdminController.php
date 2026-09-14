@@ -682,6 +682,115 @@ class AdminController extends BaseController
         }
     }
 
+    public function duplicateExam()
+    {
+        try {
+            $this->checkAuth();
+            $sourceId = $this->request->getPost('source_id');
+            if (empty($sourceId)) {
+                return $this->respond(['success' => false, 'message' => 'ไม่พบรหัสวิชาต้นฉบับ'], 400);
+            }
+
+            $examModel = new \App\Models\ExamModel();
+            $sourceExam = $examModel->find($sourceId);
+            if (!$sourceExam) {
+                return $this->respond(['success' => false, 'message' => 'ไม่พบข้อมูลวิชาต้นฉบับ'], 404);
+            }
+
+            $teacherEmail = $this->session->get('teacher_email');
+            $teacherName = $this->session->get('teacher_name');
+            $teacherEmailToSave = $teacherEmail ?: $sourceExam['teacher_email'];
+            $teacherNameToSave = $teacherName ?: $sourceExam['teacher_name'];
+
+            $subjectName = trim($this->request->getPost('subject_name') ?? '');
+            if (empty($subjectName)) {
+                $subjectName = $sourceExam['subject_name'] . ' (คัดลอก)';
+            }
+            $subjectCode = trim($this->request->getPost('subject_code') ?? $sourceExam['subject_code']);
+            $academicYear = trim($this->request->getPost('academic_year') ?? $sourceExam['academic_year']);
+            $semester = trim($this->request->getPost('semester') ?? $sourceExam['semester']);
+            $examType = trim($this->request->getPost('exam_type') ?? $sourceExam['exam_type']);
+            $examRound = trim($this->request->getPost('exam_round') ?? '1');
+            $copyQuestions = filter_var($this->request->getPost('copy_questions'), FILTER_VALIDATE_BOOLEAN);
+
+            // Generate new UUID for the exam
+            $newExamId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+                mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+                mt_rand(0, 0xffff),
+                mt_rand(0, 0x0fff) | 0x4000,
+                mt_rand(0, 0x3fff) | 0x8000,
+                mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+            );
+
+            $data = [
+                'id'                 => $newExamId,
+                'subject_code'       => $subjectCode,
+                'subject_name'       => $subjectName,
+                'academic_year'      => $academicYear,
+                'semester'           => $semester,
+                'learning_area'      => $sourceExam['learning_area'],
+                'teacher_name'       => $teacherNameToSave,
+                'teacher_email'      => $teacherEmailToSave,
+                'exam_type'          => $examType,
+                'exam_status'        => 'Waiting', // Default fresh state
+                'started_at'         => null,
+                'max_attempts'       => (int)$sourceExam['max_attempts'],
+                'passing_percentage' => (int)$sourceExam['passing_percentage'],
+                'time_limit_choice'  => (int)$sourceExam['time_limit_choice'],
+                'time_limit_writing' => (int)$sourceExam['time_limit_writing'],
+                'exam_duration'      => (int)($sourceExam['exam_duration'] ?? 0),
+                'join_policy'        => $sourceExam['join_policy'] ?: 'anytime',
+                'anti_cheating'      => isset($sourceExam['anti_cheating']) ? (int)$sourceExam['anti_cheating'] : 1,
+                'max_strikes'        => isset($sourceExam['max_strikes']) ? (int)$sourceExam['max_strikes'] : 3,
+                'num_questions'      => (int)($sourceExam['num_questions'] ?? 20),
+                'exam_round'         => $examRound ?: '1'
+            ];
+
+            $examModel->insert($data);
+
+            $copiedCount = 0;
+            if ($copyQuestions) {
+                $questionModel = new QuestionModel();
+                $sourceQuestions = $questionModel->where('exam_id', $sourceId)->findAll();
+                if (!empty($sourceQuestions)) {
+                    $newQuestions = [];
+                    foreach ($sourceQuestions as $q) {
+                        $newQId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+                            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+                            mt_rand(0, 0xffff),
+                            mt_rand(0, 0x0fff) | 0x4000,
+                            mt_rand(0, 0x3fff) | 0x8000,
+                            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+                        );
+                        $newQuestions[] = [
+                            'id'             => $newQId,
+                            'exam_id'        => $newExamId,
+                            'question_text'  => $q['question_text'],
+                            'option_a'       => $q['option_a'],
+                            'option_b'       => $q['option_b'],
+                            'option_c'       => $q['option_c'],
+                            'option_d'       => $q['option_d'],
+                            'correct_answer' => $q['correct_answer'],
+                            'type'           => $q['type'],
+                            'points'         => $q['points'],
+                            'image_url'      => $q['image_url']
+                        ];
+                    }
+                    $questionModel->insertBatch($newQuestions);
+                    $copiedCount = count($newQuestions);
+                }
+            }
+
+            return $this->respond([
+                'success'     => true,
+                'message'     => 'คัดลอกรายวิชาสำเร็จ' . ($copiedCount > 0 ? " (พร้อมคัดลอกข้อสอบ $copiedCount ข้อ)" : ''),
+                'new_exam_id' => $newExamId
+            ]);
+        } catch (\Exception $e) {
+            return $this->respond(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     public function getQuestions()
     {
         try {

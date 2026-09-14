@@ -1,3 +1,15 @@
+<?php
+  // Extract and sort unique academic years
+  $academicYears = [];
+  foreach ($exams as $e) {
+      $yr = trim($e['academic_year'] ?? '');
+      if ($yr !== '' && !in_array($yr, $academicYears, true)) {
+          $academicYears[] = $yr;
+      }
+  }
+  rsort($academicYears, SORT_NATURAL);
+  $latestYear = !empty($academicYears) ? $academicYears[0] : '';
+?>
 <!DOCTYPE html>
 <html lang="th">
 
@@ -169,6 +181,32 @@
       transform: translateY(-4px);
     }
 
+    /* Filter Chips Style */
+    .filter-chip {
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.25s ease;
+    }
+    .filter-chip.active {
+      background: rgba(255, 255, 255, 0.16) !important;
+      border-color: rgba(255, 255, 255, 0.4) !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      transform: scale(1.04);
+    }
+    .filter-chip:hover {
+      transform: translateY(-1px);
+    }
+
+    /* Pulse Glow Animations */
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.88; transform: scale(1.02); }
+    }
+    .animate-pulse-subtle {
+      animation: subtlePulse 2.8s ease-in-out infinite;
+    }
+
     .input-box {
       width: 100%;
       background: rgba(0, 0, 0, 0.3);
@@ -313,19 +351,61 @@
           ยินดีต้อนรับเข้าสู่ระบบคลังข้อสอบอัจฉริยะ โรงเรียนสวนกุหลาบวิทยาลัย จิรประวัติ นครสวรรค์ พิมพ์ค้นหาวิชาของคุณที่ด้านล่าง เพื่อเข้าทำข้อสอบได้ทันที!
         </p>
 
-        <!-- Search Box (Centered/Stacked) -->
-        <div class="w-full max-w-2xl bg-white/5 border border-white/10 p-2.5 sm:p-3 lg:p-4 rounded-2xl sm:rounded-3xl backdrop-blur-xl flex justify-center shadow-2xl relative overflow-hidden group">
-          <div class="absolute inset-0 bg-gradient-to-r from-skjPink/5 to-skjBlue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div class="relative w-full z-10">
-            <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-              <svg class="h-5 w-5 text-slate-400 group-hover:text-skjBlue transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </span>
-            <input type="text" id="searchInput" oninput="filterExams()"
-              class="w-full pl-11 pr-4 py-2.5 bg-black/40 border border-white/10 rounded-xl sm:rounded-2xl text-xs sm:text-sm focus:outline-none focus:border-skjPink focus:ring-4 focus:ring-skjPink/15 text-white placeholder-slate-500 transition-all duration-300 font-semibold"
-              placeholder="ค้นหาชื่อวิชา รหัสวิชา หรือครูผู้สอนเพื่อเริ่มทำข้อสอบ...">
+        <!-- Search Box & Academic Year Filter (Defaults to latest year always) -->
+        <div class="w-full max-w-2xl flex flex-col sm:flex-row gap-2.5">
+          <!-- Search Box -->
+          <div class="flex-1 bg-white/5 border border-white/10 p-2 sm:p-2.5 rounded-2xl sm:rounded-3xl backdrop-blur-xl flex items-center shadow-2xl relative overflow-hidden group">
+            <div class="absolute inset-0 bg-gradient-to-r from-skjPink/5 to-skjBlue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div class="relative w-full z-10 flex items-center">
+              <span class="pl-3.5 pr-2 pointer-events-none text-slate-400 group-hover:text-skjBlue transition-colors duration-300">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </span>
+              <input type="text" id="searchInput" oninput="filterExams()"
+                class="w-full py-1 bg-transparent text-xs sm:text-sm focus:outline-none text-white placeholder-slate-500 font-semibold"
+                placeholder="ค้นหาชื่อวิชา รหัสวิชา หรือพิมพ์ 'กลางภาค' / 'ปลายภาค'...">
+            </div>
           </div>
+
+          <!-- Academic Year Selector (Defaults to latest year always) -->
+          <div class="bg-white/5 border border-white/10 px-3.5 py-2 rounded-2xl sm:rounded-3xl backdrop-blur-xl flex items-center gap-2 shadow-2xl shrink-0 justify-between sm:justify-start">
+            <span class="text-xs font-black text-slate-300 flex items-center gap-1.5">
+              <span>📅</span>
+              <span class="hidden sm:inline">ปีการศึกษา:</span>
+              <span class="sm:hidden">ปี:</span>
+            </span>
+            <select id="academicYearFilter" onchange="filterExams()"
+              class="bg-black/60 border border-pink-500/30 text-pink-300 text-xs font-black rounded-xl px-3 py-1.5 outline-none focus:ring-2 focus:ring-skjPink/50 cursor-pointer">
+              <?php foreach ($academicYears as $idx => $yr): ?>
+                <option value="<?= esc($yr) ?>" <?= $idx === 0 ? 'selected' : '' ?> class="bg-slate-900 text-white">
+                  <?= esc($yr) ?><?= $idx === 0 ? ' (ล่าสุด)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+              <option value="all" class="bg-slate-900 text-white">🌟 ทุกปีการศึกษา</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Quick Filter Chips for Exam Types -->
+        <div class="w-full max-w-2xl flex flex-wrap items-center justify-center lg:justify-start gap-2 mt-3 pt-1">
+          <span class="text-xs font-bold text-slate-400 hidden sm:inline mr-1">🔍 คัดกรองรอบสอบ:</span>
+          <button type="button" onclick="setExamTypeFilter('all')" id="filter-chip-all"
+            class="filter-chip active px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10">
+            🌟 ทั้งหมด
+          </button>
+          <button type="button" onclick="setExamTypeFilter('กลางภาค')" id="filter-chip-midterm"
+            class="filter-chip px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border border-amber-500/40 bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 shadow-sm">
+            🎯 สอบกลางภาค
+          </button>
+          <button type="button" onclick="setExamTypeFilter('ปลายภาค')" id="filter-chip-final"
+            class="filter-chip px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border border-purple-500/40 bg-purple-500/15 text-purple-200 hover:bg-purple-500/25 shadow-sm">
+            🏁 สอบปลายภาค
+          </button>
+          <button type="button" onclick="setExamTypeFilter('other')" id="filter-chip-other"
+            class="filter-chip px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border border-sky-500/40 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 shadow-sm">
+            📝 สอบอื่นๆ
+          </button>
         </div>
       </div>
 
@@ -357,6 +437,19 @@
 
     <!-- Exams Grid Container -->
     <main class="w-full mt-8">
+      <!-- Active Filter Status & Count Bar -->
+      <div class="w-full flex items-center justify-between px-2 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-xs font-extrabold text-slate-300" id="currentFilterLabel">
+            แสดงวิชาสอบ: ปีการศึกษา <?= esc($latestYear ?: '-') ?>
+          </span>
+        </div>
+        <span class="text-xs font-bold text-slate-400 bg-white/5 border border-white/10 px-3 py-1 rounded-full" id="examCountBadge">
+          -- รายวิชา
+        </span>
+      </div>
+
       <div id="examsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
         <?php if (empty($exams)): ?>
           <div class="col-span-full text-center py-20 bg-white/5 border border-white/10 rounded-3xl">
@@ -365,13 +458,41 @@
           </div>
         <?php else: ?>
           <?php foreach ($exams as $exam): ?>
-            <div class="exam-card glass-card rounded-[32px] p-6 flex flex-col justify-between" style="display: none;"
-              data-subject-name="<?= esc($exam['subject_name']) ?>" data-subject-code="<?= esc($exam['subject_code']) ?>"
-              data-teacher-name="<?= esc($exam['teacher_name']) ?>" data-learning-area="<?= esc($exam['learning_area']) ?>">
+            <?php
+              $examTypeStr = $exam['exam_type'] ?? 'สอบกลางภาค';
+              $isMidterm   = (mb_strpos($examTypeStr, 'กลางภาค') !== false);
+              $isFinal     = (mb_strpos($examTypeStr, 'ปลายภาค') !== false);
+
+              if ($isMidterm) {
+                  $badgeClass = 'bg-gradient-to-r from-amber-500/25 via-orange-500/20 to-amber-500/25 text-amber-300 border border-amber-400/60 shadow-[0_0_15px_rgba(245,158,11,0.25)]';
+                  $badgeIcon  = '🎯';
+                  $cardAccent = 'hover:border-amber-400/50 hover:shadow-amber-500/10';
+              } elseif ($isFinal) {
+                  $badgeClass = 'bg-gradient-to-r from-purple-500/30 via-fuchsia-500/25 to-pink-500/25 text-purple-200 border border-purple-400/60 shadow-[0_0_15px_rgba(168,85,247,0.25)]';
+                  $badgeIcon  = '🏁';
+                  $cardAccent = 'hover:border-purple-400/50 hover:shadow-purple-500/10';
+              } else {
+                  $badgeClass = 'bg-sky-500/20 text-sky-300 border border-sky-400/50 shadow-[0_0_10px_rgba(14,165,233,0.15)]';
+                  $badgeIcon  = '📝';
+                  $cardAccent = 'hover:border-sky-400/50 hover:shadow-sky-500/10';
+              }
+
+              $semesterText = (!empty($exam['semester']) || !empty($exam['academic_year']))
+                  ? 'เทอม ' . esc($exam['semester'] ?? '-') . '/' . esc($exam['academic_year'] ?? '-')
+                  : '';
+            ?>
+            <div class="exam-card glass-card rounded-[32px] p-6 flex flex-col justify-between transition-all <?= $cardAccent ?>" style="display: none;"
+              data-subject-name="<?= esc($exam['subject_name']) ?>"
+              data-subject-code="<?= esc($exam['subject_code']) ?>"
+              data-teacher-name="<?= esc($exam['teacher_name']) ?>"
+              data-learning-area="<?= esc($exam['learning_area']) ?>"
+              data-exam-type="<?= esc($examTypeStr) ?>"
+              data-academic-year="<?= esc(trim($exam['academic_year'] ?? '')) ?>"
+              data-semester-info="<?= esc($semesterText) ?>">
 
               <div>
-                <!-- Badge Group -->
-                <div class="flex justify-between items-center mb-4">
+                <!-- Top Badges: Learning Area & Status -->
+                <div class="flex justify-between items-center mb-3">
                   <span
                     class="px-3 py-1 bg-white/5 border border-white/10 text-slate-300 rounded-full text-[10px] font-bold">
                     📚 <?= esc($exam['learning_area']) ?>
@@ -396,13 +517,23 @@
                   <?php endif; ?>
                 </div>
 
+                <!-- Highly Prominent Exam Type Banner with Semester Info -->
+                <div class="flex items-center justify-between gap-2 mb-3">
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black tracking-wide <?= $badgeClass ?> animate-pulse-subtle">
+                    <span class="text-sm"><?= $badgeIcon ?></span>
+                    <span><?= esc($examTypeStr) ?></span>
+                  </span>
+                  <?php if ($semesterText !== ''): ?>
+                    <span class="text-[11px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg">
+                      <?= $semesterText ?>
+                    </span>
+                  <?php endif; ?>
+                </div>
+
                 <!-- Subject Info -->
-                <h3 class="text-lg font-black text-white leading-snug mb-1 line-clamp-2"><?= esc($exam['subject_name']) ?>
-                </h3>
-                <p class="text-skjBlue font-extrabold text-xs mb-4">รหัสวิชา: <?= esc($exam['subject_code']) ?>
-                  &nbsp;|&nbsp;
-                  <?= esc($exam['exam_type']) ?>    <?php if (!empty($exam['academic_year']) || !empty($exam['semester'])): ?>
-                    &nbsp;|&nbsp; ปีการศึกษา: <?= esc($exam['academic_year']) ?>/<?= esc($exam['semester']) ?><?php endif; ?>
+                <h3 class="text-xl font-black text-white leading-snug mb-1 line-clamp-2"><?= esc($exam['subject_name']) ?></h3>
+                <p class="text-skjBlue font-extrabold text-xs mb-4">
+                  รหัสวิชา: <?= esc($exam['subject_code']) ?>
                 </p>
 
                 <!-- Additional detail info -->
@@ -438,11 +569,11 @@
                 <?php else: ?>
                   <div class="flex gap-2">
                     <button
-                      onclick="openRegisterModal('<?= esc($exam['id']) ?>', '<?= esc($exam['subject_name']) ?>', '<?= esc($exam['teacher_name']) ?>')"
+                      onclick="openRegisterModal('<?= esc($exam['id']) ?>', '<?= esc(addslashes($exam['subject_name'])) ?>', '<?= esc(addslashes($exam['teacher_name'])) ?>', '<?= esc(addslashes($examTypeStr)) ?>', '<?= esc(addslashes($semesterText)) ?>')"
                       class="flex-1 py-3.5 btn-pink-blue font-extrabold rounded-2xl text-sm flex items-center justify-center gap-2">
                       เข้าห้องสอบ 🚀
                     </button>
-                    <button onclick="openShareModal('<?= esc($exam['id']) ?>', '<?= esc($exam['subject_name']) ?>')"
+                    <button onclick="openShareModal('<?= esc($exam['id']) ?>', '<?= esc(addslashes($exam['subject_name'])) ?>', '<?= esc(addslashes($examTypeStr)) ?>', '<?= esc(addslashes($semesterText)) ?>')"
                       class="px-4 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-slate-350 hover:text-white transition-all flex items-center justify-center shadow-lg cursor-pointer"
                       title="แชร์ลิงก์ / QR Code">
                       🔗
@@ -486,6 +617,7 @@
         <span
           class="px-3.5 py-1.5 bg-skjBlue/10 text-skjBlue rounded-full text-xs font-black uppercase tracking-widest border border-skjBlue/20 mb-3 inline-block">ลิงก์เข้าสอบ
           & QR Code</span>
+        <div id="shareExamTypeBadge" class="mb-2"></div>
         <h3 id="shareSubjectTitle" class="text-lg font-black text-white leading-tight">วิชา</h3>
       </div>
 
@@ -525,8 +657,9 @@
       <div class="text-center mb-6">
         <span
           class="px-3.5 py-1.5 bg-skjPink/10 text-skjPink rounded-full text-xs font-black uppercase tracking-widest border border-skjPink/20 mb-3 inline-block">กรอกข้อมูลผู้เข้าสอบ</span>
+        <div id="modalExamTypeBadge" class="mb-2.5"></div>
         <h3 id="modalSubjectTitle" class="text-xl font-black text-white leading-tight">คณิตศาสตร์พื้นฐาน</h3>
-        <p id="modalTeacherName" class="text-xs text-slate-500 font-bold mt-1">ครูผู้สอน: ครูสมชาย ใจดี</p>
+        <p id="modalTeacherName" class="text-xs text-slate-400 font-bold mt-1">ครูผู้สอน: ครูสมชาย ใจดี</p>
       </div>
 
       <!-- Registration Form -->
@@ -620,16 +753,34 @@
         if (foundCard) {
           const subName = foundCard.getAttribute('data-subject-name');
           const teacherName = foundCard.getAttribute('data-teacher-name');
-          openRegisterModal(examId, subName, teacherName);
+          const examType = foundCard.getAttribute('data-exam-type');
+          const semesterInfo = foundCard.getAttribute('data-semester-info');
+          openRegisterModal(examId, subName, teacherName, examType, semesterInfo);
         }
       }
     };
 
-    function openShareModal(examId, subjectName) {
+    function openShareModal(examId, subjectName, examType, semesterInfo) {
       const link = window.location.origin + '/?exam_id=' + examId;
       document.getElementById('shareSubjectTitle').textContent = subjectName;
       document.getElementById('shareLinkField').value = link;
       document.getElementById('shareQRCodeImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(link);
+
+      const badgeEl = document.getElementById('shareExamTypeBadge');
+      if (badgeEl) {
+        const type = examType || '';
+        const isMidterm = type.includes('กลางภาค');
+        const isFinal = type.includes('ปลายภาค');
+        let badgeHtml = '';
+        if (isMidterm) {
+          badgeHtml = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-400/50 shadow-sm"><span>🎯</span> ${type} ${semesterInfo ? `• ${semesterInfo}` : ''}</span>`;
+        } else if (isFinal) {
+          badgeHtml = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-purple-500/20 text-purple-200 border border-purple-400/50 shadow-sm"><span>🏁</span> ${type} ${semesterInfo ? `• ${semesterInfo}` : ''}</span>`;
+        } else {
+          badgeHtml = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-sky-500/15 text-sky-300 border border-sky-400/40"><span>📝</span> ${type} ${semesterInfo ? `• ${semesterInfo}` : ''}</span>`;
+        }
+        badgeEl.innerHTML = badgeHtml;
+      }
 
       const modal = document.getElementById('shareModal');
       modal.classList.add('active');
@@ -663,26 +814,66 @@
       });
     }
 
+    let currentExamTypeFilter = 'all';
+
+    function setExamTypeFilter(filterType) {
+      currentExamTypeFilter = filterType;
+
+      // Update active style on filter chips
+      document.querySelectorAll('.filter-chip').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      const activeBtnId = filterType === 'all' ? 'filter-chip-all' :
+        (filterType === 'กลางภาค' ? 'filter-chip-midterm' :
+        (filterType === 'ปลายภาค' ? 'filter-chip-final' : 'filter-chip-other'));
+      const activeBtn = document.getElementById(activeBtnId);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      filterExams();
+    }
+
     function filterExams() {
       const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+      const yearFilter = document.getElementById('academicYearFilter');
+      const selectedYear = yearFilter ? yearFilter.value : 'all';
       const cards = document.querySelectorAll('.exam-card');
       let visibleCount = 0;
 
-      const isSearchActive = searchVal.length > 0;
-
       cards.forEach(card => {
-        if (!isSearchActive) {
-          card.style.display = 'none';
-          return;
+        const subName = (card.getAttribute('data-subject-name') || '').toLowerCase();
+        const subCode = (card.getAttribute('data-subject-code') || '').toLowerCase();
+        const teacher = (card.getAttribute('data-teacher-name') || '').toLowerCase();
+        const examType = (card.getAttribute('data-exam-type') || '').toLowerCase();
+        const area = (card.getAttribute('data-learning-area') || '').toLowerCase();
+        const cardYear = (card.getAttribute('data-academic-year') || '').trim();
+
+        // Check Academic Year matching (Defaults to latest year always)
+        let matchesYear = true;
+        if (selectedYear !== 'all' && selectedYear !== '') {
+          matchesYear = (cardYear === selectedYear);
         }
 
-        const subName = card.getAttribute('data-subject-name').toLowerCase();
-        const subCode = card.getAttribute('data-subject-code').toLowerCase();
-        const teacher = card.getAttribute('data-teacher-name').toLowerCase();
+        // Search text matching
+        const matchesSearch = searchVal === '' ||
+          subName.includes(searchVal) ||
+          subCode.includes(searchVal) ||
+          teacher.includes(searchVal) ||
+          examType.includes(searchVal) ||
+          cardYear.includes(searchVal) ||
+          area.includes(searchVal);
 
-        const matchesSearch = subName.includes(searchVal) || subCode.includes(searchVal) || teacher.includes(searchVal);
+        // Filter chips matching (exam type)
+        let matchesType = true;
+        if (currentExamTypeFilter === 'กลางภาค') {
+          matchesType = examType.includes('กลางภาค');
+        } else if (currentExamTypeFilter === 'ปลายภาค') {
+          matchesType = examType.includes('ปลายภาค');
+        } else if (currentExamTypeFilter === 'other') {
+          matchesType = !examType.includes('กลางภาค') && !examType.includes('ปลายภาค');
+        }
 
-        if (matchesSearch) {
+        if (matchesYear && matchesSearch && matchesType) {
           card.style.display = 'flex';
           visibleCount++;
         } else {
@@ -690,38 +881,78 @@
         }
       });
 
+      // Update Filter Status & Count Bar
+      const countBadge = document.getElementById('examCountBadge');
+      if (countBadge) {
+        countBadge.textContent = `${visibleCount} รายวิชา`;
+      }
+      const labelEl = document.getElementById('currentFilterLabel');
+      if (labelEl) {
+        let labelText = selectedYear === 'all' ? 'แสดงทุกปีการศึกษา' : `ปีการศึกษา ${selectedYear}`;
+        if (currentExamTypeFilter !== 'all') {
+          labelText += ` • ${currentExamTypeFilter === 'other' ? 'สอบอื่นๆ' : currentExamTypeFilter}`;
+        }
+        if (searchVal) {
+          labelText += ` (ค้นหา: "${searchVal}")`;
+        }
+        labelEl.textContent = labelText;
+      }
+
       // Handle empty filtered list state
       let emptyMsg = document.getElementById('emptyFilteredMessage');
       if (emptyMsg) emptyMsg.remove();
 
-      if (!isSearchActive) {
-        emptyMsg = document.createElement('div');
-        emptyMsg.id = 'emptyFilteredMessage';
-        emptyMsg.className = 'col-span-full text-center py-14 bg-white/3 border border-white/5 rounded-[32px] backdrop-blur-md p-6';
-        emptyMsg.innerHTML = `
-          <span class="text-4xl block mb-2">🔍</span>
-          <h4 class="text-white font-extrabold text-lg mb-1">พิมพ์ค้นหาวิชาสอบของคุณด้านบน</h4>
-          <p class="text-slate-400 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">ค้นหาด้วย ชื่อวิชา, รหัสวิชา หรือชื่อของคุณครูผู้สอน เพื่อเริ่มต้นทำข้อสอบน้า 💖</p>
-        `;
-        document.getElementById('examsGrid').appendChild(emptyMsg);
-      } else if (visibleCount === 0) {
+      if (visibleCount === 0) {
         emptyMsg = document.createElement('div');
         emptyMsg.id = 'emptyFilteredMessage';
         emptyMsg.className = 'col-span-full text-center py-16 bg-white/5 border border-white/5 rounded-3xl backdrop-blur-md p-8';
         emptyMsg.innerHTML = `
           <span class="text-6xl block mb-4">😿</span>
-          <h3 class="text-white font-black text-xl mb-1">ไม่พบวิชาสอบนี้</h3>
-          <p class="text-slate-400 text-xs sm:text-sm">กรุณาตรวจสอบการสะกดคำค้นหา หรือค้นหาด้วยชื่อผู้สอนแทนอีกครั้งนะ</p>
+          <h3 class="text-white font-black text-xl mb-1">ไม่พบวิชาสอบที่ตรงกับเงื่อนไข</h3>
+          <p class="text-slate-400 text-xs sm:text-sm mt-1 leading-relaxed">
+            ${selectedYear !== 'all' ? `ไม่พบวิชาสอบในปีการศึกษา <strong>${selectedYear}</strong> ลองเปลี่ยนปีการศึกษา หรือเลือก <strong>"🌟 ทุกปีการศึกษา"</strong> ดูนะ` : 'กรุณาตรวจสอบการสะกดคำค้นหา หรือลองเปลี่ยนปุ่มคัดกรองรอบสอบดูนะ'}
+          </p>
         `;
         document.getElementById('examsGrid').appendChild(emptyMsg);
       }
     }
 
     // Modal control
-    function openRegisterModal(examId, subjectName, teacherName) {
+    function openRegisterModal(examId, subjectName, teacherName, examType, semesterInfo) {
       document.getElementById('examIdField').value = examId;
       document.getElementById('modalSubjectTitle').textContent = subjectName;
       document.getElementById('modalTeacherName').textContent = `ครูผู้สอน: ${teacherName}`;
+
+      const badgeEl = document.getElementById('modalExamTypeBadge');
+      if (badgeEl) {
+        const type = examType || '';
+        const isMidterm = type.includes('กลางภาค');
+        const isFinal = type.includes('ปลายภาค');
+        let badgeHtml = '';
+        if (isMidterm) {
+          badgeHtml = `
+            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500/25 via-orange-500/20 to-amber-500/25 text-amber-300 border border-amber-400/60 shadow-[0_0_15px_rgba(245,158,11,0.25)]">
+              <span class="text-sm">🎯</span>
+              <span>${type}</span>
+              ${semesterInfo ? `<span class="opacity-70 font-semibold">• ${semesterInfo}</span>` : ''}
+            </span>`;
+        } else if (isFinal) {
+          badgeHtml = `
+            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black bg-gradient-to-r from-purple-500/30 via-fuchsia-500/25 to-pink-500/25 text-purple-200 border border-purple-400/60 shadow-[0_0_15px_rgba(168,85,247,0.25)]">
+              <span class="text-sm">🏁</span>
+              <span>${type}</span>
+              ${semesterInfo ? `<span class="opacity-70 font-semibold">• ${semesterInfo}</span>` : ''}
+            </span>`;
+        } else {
+          badgeHtml = `
+            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black bg-sky-500/15 text-sky-300 border border-sky-400/40">
+              <span class="text-sm">📝</span>
+              <span>${type}</span>
+              ${semesterInfo ? `<span class="opacity-70 font-semibold">• ${semesterInfo}</span>` : ''}
+            </span>`;
+        }
+        badgeEl.innerHTML = badgeHtml;
+      }
 
       const modal = document.getElementById('registerModal');
       modal.classList.add('active');
