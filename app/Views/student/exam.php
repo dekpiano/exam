@@ -483,9 +483,117 @@
       position: relative;
       overflow: hidden;
       box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6), inset 0 0 30px rgba(255, 203, 5, 0.1);
+      transition: background 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease;
     }
     @media (min-width: 640px) {
       .poke-battle-arena { padding: 1.75rem 1.5rem; border-radius: 28px; border-width: 3px; }
+    }
+
+    /* Arena Habitat Badge */
+    .arena-habitat-badge {
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      z-index: 5;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 99px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      transition: all 0.4s ease;
+    }
+
+    /* Scenery Backdrop */
+    .arena-scenery-backdrop {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      border-radius: inherit;
+      transition: opacity 0.5s ease;
+    }
+
+    /* 1. Forest Environment (ป่าเขียวขจี) */
+    .poke-battle-arena.arena-forest {
+      background: linear-gradient(180deg, #052e16 0%, #064e3b 40%, #022c22 75%, #14532d 100%) !important;
+      border-color: #22c55e !important;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), inset 0 0 40px rgba(34, 197, 94, 0.2) !important;
+    }
+    .arena-forest .arena-habitat-badge {
+      background: rgba(5, 46, 22, 0.85);
+      border: 1px solid rgba(74, 222, 128, 0.5);
+      color: #86efac;
+    }
+    .arena-forest .enemy-pedestal,
+    .arena-forest .player-pedestal {
+      background: radial-gradient(ellipse, rgba(34, 197, 94, 0.85) 0%, rgba(21, 128, 61, 0.45) 50%, transparent 75%) !important;
+      box-shadow: 0 4px 18px rgba(34, 197, 94, 0.4) !important;
+    }
+    .arena-forest .arena-scenery-backdrop {
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(134, 239, 172, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 80% 60%, rgba(74, 222, 128, 0.12) 0%, transparent 50%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 L0 180 L35 150 L70 200 L120 120 L170 190 L220 100 L270 180 L320 130 L370 210 L430 90 L490 200 L550 110 L610 190 L680 80 L740 180 L800 120 L860 200 L920 140 L970 190 L1000 160 L1000 300 Z' fill='%23022c22' opacity='0.7'/%3E%3Cpath d='M0 300 L0 210 L50 170 L100 230 L160 160 L210 220 L270 150 L330 230 L390 170 L460 240 L520 160 L580 230 L650 150 L710 230 L780 170 L840 240 L910 180 L960 230 L1000 200 L1000 300 Z' fill='%2314532d' opacity='0.85'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: bottom;
+      background-size: 100% 70%;
+    }
+
+    /* 2. Mountain / Volcano Environment (ภูเขาและถ้ำหิน) */
+    .poke-battle-arena.arena-mountain {
+      background: linear-gradient(180deg, #450a0a 0%, #29120e 35%, #1c1917 65%, #44403c 100%) !important;
+      border-color: #f97316 !important;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), inset 0 0 40px rgba(249, 115, 22, 0.25) !important;
+    }
+    .arena-mountain .arena-habitat-badge {
+      background: rgba(69, 10, 10, 0.85);
+      border: 1px solid rgba(251, 146, 60, 0.5);
+      color: #fed7aa;
+    }
+    .arena-mountain .enemy-pedestal,
+    .arena-mountain .player-pedestal {
+      background: radial-gradient(ellipse, rgba(234, 88, 12, 0.85) 0%, rgba(120, 53, 15, 0.5) 45%, #292524 75%, transparent 80%) !important;
+      box-shadow: 0 4px 18px rgba(234, 88, 12, 0.45) !important;
+    }
+    .arena-mountain .arena-scenery-backdrop {
+      background-image: 
+        radial-gradient(circle at 75% 20%, rgba(239, 68, 68, 0.2) 0%, transparent 45%),
+        radial-gradient(circle at 25% 70%, rgba(249, 115, 22, 0.15) 0%, transparent 40%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpolygon points='0,300 0,160 140,70 280,210 420,50 560,190 700,40 840,180 1000,90 1000,300' fill='%231c1917' opacity='0.7'/%3E%3Cpolygon points='0,300 0,220 180,120 340,240 500,100 680,230 820,130 1000,210 1000,300' fill='%23292524' opacity='0.9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: bottom;
+      background-size: 100% 75%;
+    }
+
+    /* 3. River / Water Basin Environment (แม่น้ำและทะเลสาบ) */
+    .poke-battle-arena.arena-river {
+      background: linear-gradient(180deg, #082f49 0%, #0c4a6e 40%, #075985 75%, #0369a1 100%) !important;
+      border-color: #38bdf8 !important;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), inset 0 0 40px rgba(56, 189, 248, 0.25) !important;
+    }
+    .arena-river .arena-habitat-badge {
+      background: rgba(8, 47, 73, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      color: #bae6fd;
+    }
+    .arena-river .enemy-pedestal,
+    .arena-river .player-pedestal {
+      background: radial-gradient(ellipse, rgba(56, 189, 248, 0.9) 0%, rgba(2, 132, 199, 0.55) 45%, rgba(3, 105, 161, 0.3) 70%, transparent 78%) !important;
+      box-shadow: 0 4px 20px rgba(56, 189, 248, 0.5) !important;
+    }
+    .arena-river .arena-scenery-backdrop {
+      background-image: 
+        radial-gradient(circle at 30% 25%, rgba(186, 230, 253, 0.2) 0%, transparent 45%),
+        radial-gradient(circle at 70% 65%, rgba(56, 189, 248, 0.15) 0%, transparent 40%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 Q150 160 300 200 T600 170 T900 210 T1000 180 L1000 300 Z' fill='%23075985' opacity='0.65'/%3E%3Cpath d='M0 300 Q200 210 400 235 T800 215 T1000 230 L1000 300 Z' fill='%230284c7' opacity='0.85'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: bottom;
+      background-size: 100% 70%;
     }
 
     /* Battle Visual Field (Platforms & Pokémon Sprites) */
@@ -1342,9 +1450,18 @@
     </div>
 
     <!-- SUB-STAGE B: POKEMON BATTLE ARENA -->
-    <div id="pokeBattleStage" class="poke-battle-arena hidden">
+    <div id="pokeBattleStage" class="poke-battle-arena arena-forest hidden">
       <!-- Arena Visual Field (Platforms & Pokémon) -->
       <div class="poke-battle-field" id="pokeBattleField">
+        <!-- Habitat Badge -->
+        <div class="arena-habitat-badge" id="arenaHabitatBadge">
+          <span id="arenaHabitatIcon">🌲</span>
+          <span id="arenaHabitatName">ป่าเขียวขจี</span>
+        </div>
+
+        <!-- Scenery Backdrop Layer -->
+        <div class="arena-scenery-backdrop" id="arenaSceneryBackdrop"></div>
+
         <!-- Enemy Platform (Top Right) -->
         <div class="enemy-platform-wrap">
           <div class="poke-status-card enemy">
@@ -2452,21 +2569,21 @@
     };
 
     const POKE_ENEMIES = [
-        { name: 'Gengar', icon: '👻', type: 'Ghost/Poison', sprite: POKE_SPRITES.gengar },
-        { name: 'Charmander', icon: '🔥', type: 'Fire', sprite: POKE_SPRITES.charmander },
-        { name: 'Bulbasaur', icon: '🍃', type: 'Grass/Poison', sprite: POKE_SPRITES.bulbasaur },
-        { name: 'Squirtle', icon: '💧', type: 'Water', sprite: POKE_SPRITES.squirtle },
-        { name: 'Charizard', icon: '🔥', type: 'Fire/Flying', sprite: POKE_SPRITES.charizard },
-        { name: 'Snorlax', icon: '💤', type: 'Normal', sprite: POKE_SPRITES.snorlax },
-        { name: 'Blastoise', icon: '💧', type: 'Water', sprite: POKE_SPRITES.blastoise },
-        { name: 'Lucario', icon: '🥊', type: 'Fighting/Steel', sprite: POKE_SPRITES.lucario },
-        { name: 'Venusaur', icon: '🍃', type: 'Grass/Poison', sprite: POKE_SPRITES.venusaur },
-        { name: 'Dragonite', icon: '🐲', type: 'Dragon/Flying', sprite: POKE_SPRITES.dragonite },
-        { name: 'Gyarados', icon: '🌊', type: 'Water/Flying', sprite: POKE_SPRITES.gyarados },
-        { name: 'Eevee', icon: '🦊', type: 'Normal', sprite: POKE_SPRITES.eevee },
-        { name: 'Rayquaza', icon: '🐉', type: 'Dragon/Flying', sprite: POKE_SPRITES.rayquaza },
-        { name: 'Mewtwo', icon: '🔮', type: 'Psychic', sprite: POKE_SPRITES.mewtwo },
-        { name: 'Mew', icon: '✨', type: 'Psychic', sprite: POKE_SPRITES.mew }
+        { name: 'Gengar', icon: '👻', type: 'Ghost/Poison', habitat: 'mountain', habitatName: 'ภูเขาและถ้ำโบราณ ⛰️', sprite: POKE_SPRITES.gengar },
+        { name: 'Charmander', icon: '🔥', type: 'Fire', habitat: 'mountain', habitatName: 'หุบเขาภูเขาไฟ 🌋', sprite: POKE_SPRITES.charmander },
+        { name: 'Bulbasaur', icon: '🍃', type: 'Grass/Poison', habitat: 'forest', habitatName: 'ป่าเขียวขจี 🌲', sprite: POKE_SPRITES.bulbasaur },
+        { name: 'Squirtle', icon: '💧', type: 'Water', habitat: 'river', habitatName: 'ริมแม่น้ำใส 🌊', sprite: POKE_SPRITES.squirtle },
+        { name: 'Charizard', icon: '🔥', type: 'Fire/Flying', habitat: 'mountain', habitatName: 'ยอดเขาภูเขาไฟ 🌋', sprite: POKE_SPRITES.charizard },
+        { name: 'Snorlax', icon: '💤', type: 'Normal', habitat: 'forest', habitatName: 'ป่าสนโบราณ 🌲', sprite: POKE_SPRITES.snorlax },
+        { name: 'Blastoise', icon: '💧', type: 'Water', habitat: 'river', habitatName: 'ทะเลสาบกว้าง 🌊', sprite: POKE_SPRITES.blastoise },
+        { name: 'Lucario', icon: '🥊', type: 'Fighting/Steel', habitat: 'mountain', habitatName: 'ยอดเขาสูงชัน 🏔️', sprite: POKE_SPRITES.lucario },
+        { name: 'Venusaur', icon: '🍃', type: 'Grass/Poison', habitat: 'forest', habitatName: 'ป่าดงดิบลึก 🌿', sprite: POKE_SPRITES.venusaur },
+        { name: 'Dragonite', icon: '🐲', type: 'Dragon/Flying', habitat: 'river', habitatName: 'ปากอ่าวแม่น้ำ 🌊', sprite: POKE_SPRITES.dragonite },
+        { name: 'Gyarados', icon: '🌊', type: 'Water/Flying', habitat: 'river', habitatName: 'น้ำตกเชี่ยวกราก 🌊', sprite: POKE_SPRITES.gyarados },
+        { name: 'Eevee', icon: '🦊', type: 'Normal', habitat: 'forest', habitatName: 'ทุ่งหญ้าชายป่า 🌸', sprite: POKE_SPRITES.eevee },
+        { name: 'Rayquaza', icon: '🐉', type: 'Dragon/Flying', habitat: 'mountain', habitatName: 'ยอดเขาเสียดฟ้า ⚡', sprite: POKE_SPRITES.rayquaza },
+        { name: 'Mewtwo', icon: '🔮', type: 'Psychic', habitat: 'mountain', habitatName: 'ถ้ำหินลึกลับ 🔮', sprite: POKE_SPRITES.mewtwo },
+        { name: 'Mew', icon: '✨', type: 'Psychic', habitat: 'forest', habitatName: 'ป่าศักดิ์สิทธิ์ ✨', sprite: POKE_SPRITES.mew }
     ];
 
     const POKE_MOVES_NAMES = [
@@ -3541,14 +3658,32 @@
         const q = questions[currentQuestionIndex];
         if (!q) return;
 
-        // 1. Update Route & Milestone Header Text
+        // 1. Update Route, Milestone & Habitat
+        const enemyData = POKE_ENEMIES[currentQuestionIndex % POKE_ENEMIES.length];
+        const habitat = enemyData.habitat || 'forest';
+        const habitatName = enemyData.habitatName || 'ป่าเขียวขจี 🌲';
+
         const routeTitle = document.getElementById('pokeRouteTitle');
         const milestoneText = document.getElementById('pokeMilestoneText');
-        if (routeTitle) routeTitle.textContent = `ถนนสายวิชาการ (Route ${current})`;
+        if (routeTitle) routeTitle.textContent = `ถนนสายวิชาการ (Route ${current}) • ${habitatName}`;
         if (milestoneText) milestoneText.textContent = `จุดข้อสอบที่ ${current} / ${total}`;
 
+        // Switch Arena Background Theme & Habitat Badge
+        const battleArena = document.getElementById('pokeBattleStage');
+        if (battleArena) {
+            battleArena.classList.remove('arena-forest', 'arena-mountain', 'arena-river');
+            battleArena.classList.add(`arena-${habitat}`);
+        }
+        const habitatBadge = document.getElementById('arenaHabitatBadge');
+        if (habitatBadge) {
+            const icon = (habitat === 'forest') ? '🌲' : (habitat === 'mountain' ? '⛰️' : '🌊');
+            const iconEl = document.getElementById('arenaHabitatIcon');
+            const nameEl = document.getElementById('arenaHabitatName');
+            if (iconEl) iconEl.textContent = icon;
+            if (nameEl) nameEl.textContent = habitatName;
+        }
+
         // 2. Select Enemy for Current Question
-        const enemyData = POKE_ENEMIES[currentQuestionIndex % POKE_ENEMIES.length];
         const enemyName = document.getElementById('pokeEnemyName');
         const enemyLv = document.getElementById('pokeEnemyLv');
         const enemySprite = document.getElementById('pokeEnemySprite');
