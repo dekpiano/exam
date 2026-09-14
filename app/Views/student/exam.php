@@ -23,6 +23,9 @@
 
     html { scroll-behavior: smooth; }
 
+    html, body {
+      overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+    }
     body {
       font-family: 'K2D', sans-serif;
       background: var(--dark);
@@ -312,6 +315,809 @@
       .progress-section, .question-area { padding-left: 1.5rem; padding-right: 1.5rem; }
       .bottom-bar { padding: 1rem 1.5rem; }
     }
+
+    /* ============================================================
+       POKÉMON RPG ADVENTURE & BATTLE STAGE STYLES
+       ============================================================ */
+    :root {
+      --poke-yellow: #ffcb05;
+      --poke-blue: #2a75bb;
+      --poke-dark-blue: #1b325f;
+      --poke-red: #ff3a3a;
+      --poke-dark: #0f172a;
+    }
+
+    #pokemonExamView {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.5rem 0.25rem 3rem;
+      user-select: none;
+    }
+    @media (min-width: 640px) {
+      #pokemonExamView { padding: 0.75rem 1rem 3rem; }
+    }
+
+    /* Top HUD in Pokemon Mode */
+    .poke-hud-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid rgba(255, 203, 5, 0.4);
+      border-radius: 12px;
+      padding: 0.4rem 0.5rem;
+      margin-bottom: 0.4rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), 0 0 10px rgba(255, 203, 5, 0.15);
+      flex-wrap: wrap;
+    }
+    .poke-route-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--poke-yellow);
+    }
+    .poke-stage-switch {
+      display: inline-flex;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 2px;
+      gap: 2px;
+    }
+    .poke-stage-btn {
+      padding: 0.25rem 0.5rem;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #94a3b8;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .poke-stage-btn.active {
+      background: linear-gradient(135deg, #ffcb05, #f59e0b);
+      color: #1e1b4b;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    }
+
+    /* OVERWORLD MAP STAGE */
+    .poke-map-card {
+      background: #0f172a;
+      border: 3px solid #334155;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+      position: relative;
+    }
+    .poke-map-header {
+      background: linear-gradient(90deg, #1e293b, #0f172a);
+      border-bottom: 2px solid #334155;
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #cbd5e1;
+    }
+    #pokeMapCanvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: #52a82e;
+      cursor: crosshair;
+      touch-action: none;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      image-rendering: pixelated;
+    }
+
+    /* Map Controls Bar & Mobile D-Pad */
+    .poke-map-footer {
+      background: #1e293b;
+      border-top: 2px solid #334155;
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .dpad-container {
+      display: grid;
+      grid-template-columns: repeat(3, 34px);
+      grid-template-rows: repeat(3, 34px);
+      gap: 2px;
+      user-select: none;
+    }
+    .dpad-btn {
+      background: #334155;
+      border: 2px solid #475569;
+      border-radius: 8px;
+      color: #f8fafc;
+      font-size: 0.9rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.1s;
+      box-shadow: 0 2px 0 #1e293b;
+    }
+    .dpad-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #1e293b;
+      background: #ffcb05;
+      color: #0f172a;
+    }
+    .btn-quick-encounter {
+      background: linear-gradient(135deg, #ef4444, #f97316);
+      color: #fff;
+      font-weight: 900;
+      font-size: 0.8rem;
+      padding: 0.6rem 1rem;
+      border-radius: 12px;
+      border: 2px solid #fca5a5;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+    .btn-quick-encounter:hover {
+      transform: scale(1.03);
+      box-shadow: 0 6px 15px rgba(239, 68, 68, 0.6);
+    }
+
+    /* BATTLE STAGE */
+    .poke-battle-arena {
+      background: linear-gradient(180deg, #1e1b4b 0%, #0f172a 45%, #14532d 100%);
+      border: 2px solid #ffcb05;
+      border-radius: 16px;
+      padding: 0.75rem 0.5rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6), inset 0 0 30px rgba(255, 203, 5, 0.1);
+    }
+    @media (min-width: 640px) {
+      .poke-battle-arena { padding: 1.75rem 1.5rem; border-radius: 28px; border-width: 3px; }
+    }
+
+    /* Battle Visual Field (Platforms & Pokémon Sprites) */
+    .poke-battle-field {
+      position: relative;
+      height: 160px; /* Reduced for mobile */
+      margin-bottom: 0.5rem;
+    }
+    @media (min-width: 640px) {
+      .poke-battle-field { height: 280px; margin-bottom: 1rem; }
+    }
+
+    /* Enemy Area (Top Right) */
+    .enemy-platform-wrap {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 55%;
+      max-width: 280px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    .poke-status-card {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 0.4rem 0.6rem;
+      width: 100%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      backdrop-filter: blur(10px);
+    }
+    @media (min-width: 640px) {
+      .poke-status-card { padding: 0.55rem 0.85rem; border-width: 2px; border-radius: 16px; }
+    }
+    .poke-status-card.enemy {
+      border-color: #fca5a5;
+      background: rgba(69, 10, 10, 0.7);
+    }
+    .poke-status-card.player {
+      border-color: #fde047;
+      background: rgba(30, 27, 75, 0.85);
+    }
+    .poke-name-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.2rem;
+    }
+    .poke-name {
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+    .poke-lv-badge {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: var(--poke-yellow);
+      background: rgba(0,0,0,0.5);
+      padding: 0.1rem 0.3rem;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 203, 5, 0.3);
+    }
+    .poke-hp-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .poke-hp-label {
+      font-size: 0.6rem;
+      font-weight: 900;
+      color: #fbbf24;
+      letter-spacing: 0.05em;
+    }
+    .poke-hp-track {
+      flex: 1;
+      height: 6px;
+      background: #1e293b;
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.15);
+      position: relative;
+    }
+    .poke-hp-fill {
+      height: 100%;
+      width: 100%;
+      background: #10b981;
+      border-radius: 99px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
+    }
+    .poke-exp-track {
+      width: 100%;
+      height: 3px;
+      background: #1e293b;
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 0.2rem;
+    }
+    .poke-exp-fill {
+      height: 100%;
+      width: 40%;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    .enemy-sprite-container {
+      margin-top: 0.2rem;
+      position: relative;
+      width: 95px;
+      height: 95px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    @media (min-width: 640px) {
+      .enemy-sprite-container { width: 155px; height: 135px; margin-top: 0.4rem; }
+    }
+    .enemy-pedestal {
+      position: absolute;
+      bottom: 2px;
+      width: 90px;
+      height: 22px;
+      background: radial-gradient(ellipse, rgba(16, 185, 129, 0.75) 0%, rgba(21, 128, 61, 0.35) 50%, transparent 75%);
+      border-radius: 50%;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+      z-index: 1;
+    }
+    @media (min-width: 640px) {
+      .enemy-pedestal { width: 135px; height: 30px; }
+    }
+    .enemy-sprite {
+      position: relative;
+      z-index: 2;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      animation: enemyHover 2.5s ease-in-out infinite alternate;
+      transition: all 0.25s ease;
+    }
+    @media (min-width: 640px) {
+      .enemy-sprite { width: 130px; height: 130px; }
+    }
+    @keyframes enemyHover {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-8px); }
+    }
+
+    /* High-Fidelity Pixel Sprite Rendering */
+    .poke-pixel-sprite {
+      width: 100%;
+      height: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.55));
+      pointer-events: none;
+      user-select: none;
+      transition: transform 0.25s ease, filter 0.25s ease;
+    }
+
+    .poke-skill-effect {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 170px;
+      height: 170px;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      border-radius: 50%;
+    }
+    .poke-skill-effect::before,
+    .poke-skill-effect::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: inherit;
+    }
+
+    /* 1. THUNDERBOLT (สายฟ้าฟาด ⚡) - Smooth Electric Lightning Burst & Arc Ring */
+    .skill-thunder {
+      background: radial-gradient(circle, rgba(254, 240, 138, 0.95) 15%, rgba(234, 179, 8, 0.75) 45%, rgba(56, 189, 248, 0.3) 70%, transparent 80%);
+      box-shadow: 0 0 50px rgba(250, 204, 21, 0.9), 0 0 90px rgba(234, 179, 8, 0.6);
+      animation: thunderFlash 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .skill-thunder::before {
+      background: linear-gradient(180deg, #ffffff 0%, #fef08a 40%, #eab308 70%, transparent 100%);
+      clip-path: polygon(48% 0%, 58% 30%, 45% 36%, 60% 64%, 42% 68%, 56% 100%, 46% 100%, 36% 70%, 48% 66%, 35% 38%, 47% 32%, 38% 0%);
+      filter: drop-shadow(0 0 12px #ffffff) drop-shadow(0 0 25px #facc15);
+      animation: thunderBolt 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .skill-thunder::after {
+      border: 3px solid rgba(254, 240, 138, 0.9);
+      box-shadow: 0 0 25px rgba(234, 179, 8, 0.8), inset 0 0 25px rgba(56, 189, 248, 0.5);
+      animation: thunderShockwave 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+    @keyframes thunderFlash {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); filter: brightness(2); }
+      15% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); filter: brightness(2.5); }
+      40% { opacity: 0.95; transform: translate(-50%, -50%) scale(1.3); filter: brightness(1.8); }
+      70% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.4); filter: brightness(1.2); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); filter: brightness(1); }
+    }
+    @keyframes thunderBolt {
+      0% { opacity: 0; transform: scaleY(0.1) translateY(-100%); }
+      20% { opacity: 1; transform: scaleY(1.1) translateY(0); }
+      45% { opacity: 1; transform: scale(1.15) rotate(5deg); }
+      70% { opacity: 0.7; transform: scale(1.05) rotate(-3deg); }
+      100% { opacity: 0; transform: scale(0.95); }
+    }
+    @keyframes thunderShockwave {
+      0% { opacity: 0; transform: scale(0.3); }
+      25% { opacity: 1; transform: scale(0.8); }
+      60% { opacity: 0.8; transform: scale(1.35); }
+      100% { opacity: 0; transform: scale(1.7); }
+    }
+
+    /* 2. IRON TAIL (หางเหล็กกล้า 💥) - Dynamic Steel Crescent Slash & Impact Sparks */
+    .skill-iron-tail {
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 10%, rgba(203, 213, 225, 0.5) 40%, transparent 70%);
+      animation: ironTailImpact 0.85s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+    .skill-iron-tail::before {
+      background: linear-gradient(135deg, transparent 35%, rgba(255, 255, 255, 0.95) 48%, #ffffff 50%, rgba(226, 232, 240, 0.95) 52%, transparent 65%);
+      box-shadow: 0 0 35px rgba(255, 255, 255, 0.9), 0 0 60px rgba(148, 163, 184, 0.8);
+      filter: drop-shadow(0 0 15px #ffffff);
+      animation: ironTailSlash 0.85s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+    }
+    .skill-iron-tail::after {
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 30px rgba(203, 213, 225, 0.9), inset 0 0 20px rgba(255, 255, 255, 0.6);
+      animation: ironTailRing 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes ironTailImpact {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+      25% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+      60% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.4); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
+    }
+    @keyframes ironTailSlash {
+      0% { opacity: 0; transform: translate(-80px, 80px) rotate(-60deg) scale(0.4); }
+      30% { opacity: 1; transform: translate(0, 0) rotate(15deg) scale(1.3); }
+      65% { opacity: 0.85; transform: translate(40px, -40px) rotate(45deg) scale(1.1); }
+      100% { opacity: 0; transform: translate(70px, -70px) rotate(60deg) scale(0.9); }
+    }
+    @keyframes ironTailRing {
+      0% { opacity: 0; transform: scale(0.2) rotate(0deg); }
+      30% { opacity: 1; transform: scale(0.9) rotate(30deg); }
+      70% { opacity: 0.6; transform: scale(1.35) rotate(60deg); }
+      100% { opacity: 0; transform: scale(1.65) rotate(90deg); }
+    }
+
+    /* 3. ELECTRO BALL (บอลประจุไฟฟ้า 🔮) - High-Tech Plasma Orb & Supernova Wave */
+    .skill-electro-ball {
+      background: radial-gradient(circle, #ffffff 15%, #38bdf8 45%, #0284c7 70%, transparent 85%);
+      box-shadow: 0 0 45px #38bdf8, 0 0 85px #0284c7, inset 0 0 25px #ffffff;
+      animation: electroBallTravel 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .skill-electro-ball::before {
+      border: 3px dashed rgba(224, 242, 254, 0.95);
+      box-shadow: 0 0 25px #38bdf8;
+      animation: electroBallOrbit 0.85s linear forwards;
+    }
+    .skill-electro-ball::after {
+      border: 3px solid rgba(56, 189, 248, 0.9);
+      box-shadow: 0 0 35px #0ea5e9, inset 0 0 30px #bae6fd;
+      animation: electroBallPulseRing 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+    @keyframes electroBallTravel {
+      0% { opacity: 0; transform: translate(-140%, 80%) scale(0.3); }
+      35% { opacity: 1; transform: translate(-50%, -50%) scale(1.25); filter: brightness(1.8); }
+      60% { opacity: 0.9; transform: translate(-50%, -50%) scale(1.4); filter: brightness(1.4); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.8); filter: brightness(1); }
+    }
+    @keyframes electroBallOrbit {
+      0% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+      35% { opacity: 1; transform: scale(1.1) rotate(180deg); }
+      70% { opacity: 0.7; transform: scale(1.35) rotate(300deg); }
+      100% { opacity: 0; transform: scale(1.6) rotate(360deg); }
+    }
+    @keyframes electroBallPulseRing {
+      0% { opacity: 0; transform: scale(0.2); }
+      40% { opacity: 1; transform: scale(1); }
+      75% { opacity: 0.6; transform: scale(1.45); }
+      100% { opacity: 0; transform: scale(1.8); }
+    }
+
+    /* 4. QUICK ATTACK (พุ่งจู่โจมไว 💨) - Supersonic Sonic Bloom & Speed Slashes */
+    .skill-quick-attack {
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 10%, rgba(224, 242, 254, 0.5) 45%, transparent 75%);
+      animation: quickAttackSonic 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .skill-quick-attack::before {
+      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.9) 25%, #ffffff 50%, rgba(255, 255, 255, 0.9) 75%, transparent 100%);
+      clip-path: polygon(0% 45%, 100% 45%, 100% 55%, 0% 55%);
+      filter: drop-shadow(0 0 15px #ffffff) drop-shadow(0 0 30px #38bdf8);
+      animation: quickAttackSlice 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .skill-quick-attack::after {
+      border: 3px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 0 35px rgba(255, 255, 255, 0.8), 0 0 60px rgba(56, 189, 248, 0.6);
+      animation: quickAttackCone 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes quickAttackSonic {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+      20% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); filter: blur(0px); }
+      55% { opacity: 0.85; transform: translate(-50%, -50%) scale(1.3); filter: blur(2px); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); filter: blur(4px); }
+    }
+    @keyframes quickAttackSlice {
+      0% { opacity: 0; transform: translateX(-120%) scaleX(0.2) skewX(-40deg); }
+      25% { opacity: 1; transform: translateX(0%) scaleX(1.4) skewX(-25deg); }
+      55% { opacity: 0.9; transform: translateX(50%) scaleX(1.2) skewX(-15deg); }
+      100% { opacity: 0; transform: translateX(120%) scaleX(0.5); }
+    }
+    @keyframes quickAttackCone {
+      0% { opacity: 0; transform: scale(0.2) skewX(-20deg); }
+      25% { opacity: 1; transform: scale(0.95) skewX(0deg); }
+      60% { opacity: 0.7; transform: scale(1.4) skewX(10deg); }
+      100% { opacity: 0; transform: scale(1.75); }
+    }
+
+    /* Player Area (Bottom Left) */
+    .player-platform-wrap {
+      position: absolute;
+      bottom: 0;
+      left: 10px;
+      width: 55%;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .player-sprite-container {
+      position: relative;
+      width: 95px;
+      height: 95px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      margin-bottom: 0.1rem;
+    }
+    @media (min-width: 640px) {
+      .player-sprite-container { width: 155px; height: 135px; margin-bottom: 0.3rem; }
+    }
+    .player-pedestal {
+      position: absolute;
+      bottom: 2px;
+      width: 95px;
+      height: 24px;
+      background: radial-gradient(ellipse, rgba(34, 197, 94, 0.8) 0%, rgba(22, 101, 52, 0.4) 50%, transparent 75%);
+      border-radius: 50%;
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.35);
+      z-index: 1;
+    }
+    @media (min-width: 640px) {
+      .player-pedestal { width: 140px; height: 32px; }
+    }
+    .player-sprite {
+      position: relative;
+      z-index: 2;
+      width: 85px;
+      height: 85px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      animation: playerBounce 2s ease-in-out infinite alternate;
+      transition: all 0.25s ease;
+    }
+    @media (min-width: 640px) {
+      .player-sprite { width: 135px; height: 135px; }
+    }
+    @keyframes playerBounce {
+      0% { transform: scale(1) translateY(0); }
+      100% { transform: scale(1.03) translateY(-4px); }
+    }
+
+    /* Battle Animations */
+    .player-attack-anim,
+    .player-attack-lunge {
+      animation: playerLunge 0.85s cubic-bezier(0.25, 1, 0.5, 1) !important;
+    }
+    @keyframes playerLunge {
+      0% { transform: translate(0, 0); }
+      45% { transform: translate(65px, -35px) scale(1.18); }
+      70% { transform: translate(30px, -15px) scale(1.08); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+    .enemy-hit-anim,
+    .enemy-take-hit {
+      animation: enemyHit 0.85s ease-in-out !important;
+    }
+    @keyframes enemyHit {
+      0%, 100% { transform: translate(0, 0); filter: brightness(1); }
+      15% { transform: translate(10px, -6px); filter: brightness(1.8) drop-shadow(0 0 18px rgba(239, 68, 68, 0.8)); }
+      30% { transform: translate(-10px, 6px); filter: brightness(1.6) drop-shadow(0 0 14px rgba(239, 68, 68, 0.7)); }
+      50% { transform: translate(6px, -4px); filter: brightness(1.3); }
+      70% { transform: translate(-4px, 3px); filter: brightness(1.1); }
+      85% { transform: translate(2px, -1px); filter: brightness(1); }
+    }
+    .enemy-fainted {
+      animation: enemyFaint 0.85s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    }
+    @keyframes enemyFaint {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      50% { opacity: 0.6; transform: translateY(20px) scale(0.85); }
+      100% { opacity: 0; transform: translateY(45px) scale(0.65); filter: blur(2px); }
+    }
+    .screen-shake {
+      animation: arenaShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+    @keyframes arenaShake {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(3px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+      40%, 60% { transform: translate3d(5px, 0, 0); }
+    }
+
+    /* BATTLE BOX: Question & Move Commands */
+    .poke-battle-box {
+      background: #0f172a;
+      border: 4px solid #38bdf8;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+    }
+    .poke-dialog-screen {
+      background: #020617;
+      border-bottom: 3px solid #1e293b;
+      padding: 0.6rem 0.75rem; /* Reduced for mobile */
+      min-height: 60px; /* Reduced */
+    }
+    .poke-dialog-title {
+      font-size: 0.7rem; /* Reduced */
+      font-weight: 800;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .poke-dialog-text {
+      font-size: 0.9rem; /* Reduced */
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    @media (min-width: 640px) {
+      .poke-dialog-screen { padding: 1rem 1.25rem; min-height: 80px; }
+      .poke-dialog-title { font-size: 0.75rem; margin-bottom: 0.4rem; }
+      .poke-dialog-text { font-size: 1.2rem; line-height: 1.6; }
+    }
+
+    .poke-battle-narrator {
+      font-size: 0.75rem; /* Reduced */
+      font-weight: 800;
+      color: #fde047;
+      background: rgba(253, 224, 71, 0.1);
+      border-left: 3px solid #fde047;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      margin-top: 0.4rem;
+      display: none;
+    }
+    @media (min-width: 640px) {
+      .poke-battle-narrator { font-size: 0.85rem; padding: 0.4rem 0.75rem; margin-top: 0.6rem; }
+    }
+
+    /* Move Commands (ช้อยส์คำตอบคือท่าไม้ตาย) */
+    .poke-moves-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.4rem; /* Reduced */
+      padding: 0.5rem 0.75rem; /* Reduced */
+      background: #090d16;
+    }
+    @media (min-width: 640px) {
+      .poke-moves-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+        padding: 0.85rem 1rem;
+      }
+    }
+
+    .poke-move-card {
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 12px;
+      padding: 0.5rem 0.75rem; /* Reduced */
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem; /* Reduced */
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    @media (min-width: 640px) {
+      .poke-move-card { padding: 0.85rem 1rem; border-radius: 14px; gap: 0.75rem; }
+    }
+    .poke-move-card:hover {
+      background: #334155;
+      border-color: #ffcb05;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 203, 5, 0.2);
+    }
+    .poke-move-card:active {
+      transform: scale(0.98);
+    }
+    .poke-move-card.selected {
+      background: rgba(255, 203, 5, 0.18);
+      border-color: #ffcb05;
+      box-shadow: 0 0 0 2px #ffcb05, 0 8px 24px rgba(255, 203, 5, 0.3);
+    }
+    .poke-move-letter {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #94a3b8;
+      font-size: 0.75rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    @media (min-width: 640px) {
+      .poke-move-letter { width: 28px; height: 28px; border-radius: 8px; font-size: 0.8rem; }
+    }
+    .poke-move-card.selected .poke-move-letter {
+      background: #ffcb05;
+      color: #0f172a;
+      border-color: #ffcb05;
+    }
+    .poke-move-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .poke-move-tag {
+      font-size: 0.6rem;
+      font-weight: 900;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.1rem;
+      display: block;
+    }
+    @media (min-width: 640px) {
+      .poke-move-tag { font-size: 0.65rem; margin-bottom: 0.15rem; }
+    }
+    .poke-move-name {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.3;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    @media (min-width: 640px) {
+      .poke-move-name { font-size: 0.95rem; line-height: 1.4; }
+    }
+
+    .poke-battle-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem; /* Reduced */
+      padding: 0.6rem 0.75rem; /* Reduced */
+      background: #0f172a;
+      border-top: 2px solid #1e293b;
+    }
+    @media (min-width: 640px) {
+      .poke-battle-actions { gap: 0.75rem; padding: 0.85rem 1rem; }
+    }
+    .btn-poke-attack {
+      flex: 1;
+      background: linear-gradient(135deg, #eab308, #ca8a04);
+      color: #0f172a;
+      font-weight: 900;
+      font-size: 0.95rem; /* Reduced */
+      padding: 0.6rem 1rem; /* Reduced */
+      border-radius: 12px;
+      border: 2px solid #fef08a;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+    .btn-poke-attack:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(234, 179, 8, 0.6);
+    }
+    .btn-poke-attack:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      filter: grayscale(1);
+    }
+    .btn-poke-map-back {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 2px solid #334155;
+      font-weight: 800;
+      font-size: 0.85rem;
+      padding: 0.85rem 1.25rem;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-poke-map-back:hover {
+      background: #334155;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -329,6 +1135,20 @@
         <span class="top-title"><?= esc($websiteName) ?></span>
       </div>
       <div class="flex items-center gap-2">
+        <?php if (($examMode ?? 'classic') === 'pokemon'): ?>
+          <!-- Sound Toggle Button (เฉพาะโหมดเกม) -->
+          <button type="button" id="soundToggleBtn" onclick="toggleSoundFx()" class="p-1.5 px-2.5 rounded-full text-xs font-black border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 transition-all flex items-center gap-1 cursor-pointer" title="เปิด/ปิดเสียงเอฟเฟกต์เกม">
+            <span id="soundToggleIcon">🔊</span>
+          </button>
+          <span class="text-[11px] font-black text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+            <span>⚡</span> Pokémon RPG
+          </span>
+        <?php else: ?>
+          <span class="text-[11px] font-black text-sky-300 bg-sky-500/15 border border-sky-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+            <span>📝</span> แบบมาตรฐาน
+          </span>
+        <?php endif; ?>
+
         <div id="overallTimerBox" class="timer-box hidden" style="border-color: rgba(14,165,233,0.35); background: rgba(14,165,233,0.12); gap: 0.35rem;" title="เวลาทำข้อสอบที่เหลือทั้งหมด">
           <span class="timer-icon">⏳</span>
           <span class="timer-number" id="overallTimerNumber" style="color: var(--blue);">--:--</span>
@@ -341,32 +1161,180 @@
     </div>
   </div>
 
-  <!-- ===== PROGRESS ===== -->
-  <div class="progress-section">
-    <div class="progress-info">
-      <?php
-        $isMidterm = (mb_strpos($examType, 'กลางภาค') !== false);
-        $isFinal   = (mb_strpos($examType, 'ปลายภาค') !== false);
-        $typeTag   = $isMidterm ? '🎯 ' : ($isFinal ? '🏁 ' : '📝 ');
-      ?>
-      <span class="progress-label" id="examSubject"><?= $typeTag . esc($examType) ?></span>
-      <span class="progress-value" id="examProgress">ข้อที่ 1 / --</span>
+  <!-- ==========================================
+       VIEW 1: CLASSIC STANDARD EXAM VIEW
+       ========================================== -->
+  <div id="classicExamView">
+    <!-- ===== PROGRESS ===== -->
+    <div class="progress-section">
+      <div class="progress-info">
+        <?php
+          $isMidterm = (mb_strpos($examType, 'กลางภาค') !== false);
+          $isFinal   = (mb_strpos($examType, 'ปลายภาค') !== false);
+          $typeTag   = $isMidterm ? '🎯 ' : ($isFinal ? '🏁 ' : '📝 ');
+        ?>
+        <span class="progress-label" id="examSubject"><?= $typeTag . esc($examType) ?></span>
+        <span class="progress-value" id="examProgress">ข้อที่ 1 / --</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressBarFill"></div>
+      </div>
     </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="progressBarFill"></div>
+
+    <!-- ===== QUESTION AREA ===== -->
+    <div class="question-area">
+      <div id="questionContainer">
+        <!-- Dynamic question content -->
+      </div>
+      
+      <!-- Action buttons right under the choices -->
+      <div style="margin-top: 3.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.5rem;">
+        <button id="nextQuestionBtn" disabled class="btn-next">ข้อถัดไป ➔</button>
+        <button id="submitExamBtn" disabled class="btn-submit hidden">ส่งข้อสอบ ✓</button>
+      </div>
     </div>
   </div>
 
-  <!-- ===== QUESTION AREA ===== -->
-  <div class="question-area">
-    <div id="questionContainer">
-      <!-- Dynamic question content -->
+  <!-- ==========================================
+       VIEW 2: GAMIFIED POKÉMON RPG ADVENTURE VIEW
+       ========================================== -->
+  <div id="pokemonExamView" class="hidden">
+    <!-- Pokémon HUD Bar -->
+    <div class="poke-hud-bar">
+      <div class="poke-route-badge">
+        <span class="text-xl animate-pulse">🌲</span>
+        <div>
+          <span class="block text-xs font-black text-amber-300" id="pokeRouteTitle">ถนนสายวิชาการ (Route 1)</span>
+          <span class="block text-[10px] text-slate-300 font-bold" id="pokeMilestoneText">จุดข้อสอบที่ 1 / --</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="poke-stage-switch">
+          <button type="button" id="btnShowMapStage" onclick="switchPokemonSubStage('map')" class="poke-stage-btn active">🗺️ แผนที่เดิน</button>
+          <button type="button" id="btnShowBattleStage" onclick="switchPokemonSubStage('battle')" class="poke-stage-btn">⚔️ สนามประลอง</button>
+        </div>
+      </div>
     </div>
-    
-    <!-- Action buttons right under the choices -->
-    <div style="margin-top: 3.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.5rem;">
-      <button id="nextQuestionBtn" disabled class="btn-next">ข้อถัดไป ➔</button>
-      <button id="submitExamBtn" disabled class="btn-submit hidden">ส่งข้อสอบ ✓</button>
+
+    <!-- SUB-STAGE A: OVERWORLD MAP STAGE -->
+    <div id="pokeMapStage" class="poke-map-card">
+      <div class="poke-map-header">
+        <span class="flex items-center gap-1.5">
+          <span>🎮</span> บังคับเดินด้วยปุ่มลูกศร, WASD หรือแตะจุดบนแผนที่
+        </span>
+        <span id="pokeTrainerBadge" class="text-amber-300 font-mono font-bold">Trainer & Pikachu ⚡</span>
+      </div>
+
+      <canvas id="pokeMapCanvas" width="640" height="420"></canvas>
+
+      <div class="poke-map-footer">
+        <!-- Mobile Touch D-Pad -->
+        <div class="flex items-center gap-4">
+          <div class="dpad-container">
+            <div></div>
+            <button type="button" class="dpad-btn" onmousedown="pokeMapWalk('up')" ontouchstart="pokeMapWalk('up'); event.preventDefault();">▲</button>
+            <div></div>
+            <button type="button" class="dpad-btn" onmousedown="pokeMapWalk('left')" ontouchstart="pokeMapWalk('left'); event.preventDefault();">◄</button>
+            <button type="button" class="dpad-btn" style="background:#1e293b; font-size:0.75rem; color:#fbbf24;" onmousedown="pokeMapInteract()" ontouchstart="pokeMapInteract(); event.preventDefault();">A</button>
+            <button type="button" class="dpad-btn" onmousedown="pokeMapWalk('right')" ontouchstart="pokeMapWalk('right'); event.preventDefault();">►</button>
+            <div></div>
+            <button type="button" class="dpad-btn" onmousedown="pokeMapWalk('down')" ontouchstart="pokeMapWalk('down'); event.preventDefault();">▼</button>
+            <div></div>
+          </div>
+          <span class="text-[11px] text-slate-400 hidden sm:inline leading-tight">
+            เดินชนพงหญ้า / จุดธงข้อสอบเพื่อเข้าสู่การประลอง
+          </span>
+        </div>
+
+        <!-- Quick Encounter Button -->
+        <button type="button" onclick="startPokemonBattleEncounter()" class="btn-quick-encounter">
+          <span>⚡</span>
+          <span>เข้าฉากประลองข้อนี้ทันที! ➔</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SUB-STAGE B: POKEMON BATTLE ARENA -->
+    <div id="pokeBattleStage" class="poke-battle-arena hidden">
+      <!-- Arena Visual Field (Platforms & Pokémon) -->
+      <div class="poke-battle-field" id="pokeBattleField">
+        <!-- Enemy Platform (Top Right) -->
+        <div class="enemy-platform-wrap">
+          <div class="poke-status-card enemy">
+            <div class="poke-name-row">
+              <span class="poke-name" id="pokeEnemyName">
+                <span id="pokeEnemyIcon">👻</span> Gengar
+              </span>
+              <span class="poke-lv-badge" id="pokeEnemyLv">Lv. 15</span>
+            </div>
+            <div class="poke-hp-wrap">
+              <span class="poke-hp-label">HP</span>
+              <div class="poke-hp-track">
+                <div class="poke-hp-fill" id="pokeEnemyHpFill" style="width: 100%;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="enemy-sprite-container">
+            <div class="enemy-pedestal"></div>
+            <div class="enemy-sprite" id="pokeEnemySprite"></div>
+            <div id="pokeSkillEffect" class="poke-skill-effect"></div>
+          </div>
+        </div>
+
+        <!-- Player Platform (Bottom Left) -->
+        <div class="player-platform-wrap">
+          <div class="player-sprite-container">
+            <div class="player-pedestal"></div>
+            <div class="player-sprite" id="pokePlayerSprite"></div>
+          </div>
+          <div class="poke-status-card player">
+            <div class="poke-name-row">
+              <span class="poke-name">
+                <span>⚡</span> Pikachu (คู่หู)
+              </span>
+              <span class="poke-lv-badge" id="pokePlayerLv">Lv. 10</span>
+            </div>
+            <div class="poke-hp-wrap">
+              <span class="poke-hp-label">HP</span>
+              <div class="poke-hp-track">
+                <div class="poke-hp-fill" id="pokePlayerHpFill" style="width: 100%;"></div>
+              </div>
+            </div>
+            <div class="poke-exp-track">
+              <div class="poke-exp-fill" id="pokePlayerExpFill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Battle Box (Question Dialog & Moves Grid) -->
+      <div class="poke-battle-box">
+        <!-- Dialog / Question Pane -->
+        <div class="poke-dialog-screen">
+          <div class="poke-dialog-title" id="pokeBattleQTitle">
+            <span>📜</span> คำถามข้อที่ 1 / -- • ปรนัย
+          </div>
+          <div class="poke-dialog-text" id="pokeBattleQText">
+            กำลังโหลดคำถาม...
+          </div>
+          <div id="pokeBattleQImage" class="mt-2"></div>
+          <div class="poke-battle-narrator" id="pokeBattleNarrator"></div>
+        </div>
+
+        <!-- Moves Commands Pane (ช้อยส์ A, B, C, D หรือข้อเขียน) -->
+        <div id="pokeBattleMovesContainer" class="poke-moves-grid">
+          <!-- Dynamic battle moves rendered via JS -->
+        </div>
+
+        <!-- Battle Actions Bar -->
+        <div class="poke-battle-actions">
+          <!-- Back to Map button removed to enforce answering -->
+          <button type="button" id="pokeAttackBtn" disabled onclick="executePokemonAttack()" class="btn-poke-attack cursor-pointer">
+            <span>⚡</span>
+            <span id="pokeAttackBtnText">ปล่อยพลังโจมตี! (ยืนยันคำตอบ)</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -385,6 +1353,7 @@
     var questions = [];
     var currentQuestionIndex = 0;
     var studentAnswers = [];
+    var answeredQuestions = [];
     var timerInterval;
     var startTime;
     var isExamActive = false;
@@ -411,6 +1380,9 @@
     window.onload = () => {
         attemptFullscreen();
         startExamMode();
+        if (typeof initExamViewMode === 'function') {
+            initExamViewMode();
+        }
     };
 
     function attemptFullscreen() {
@@ -447,6 +1419,7 @@
         startTime = new Date();
         isExamActive = true;
         studentAnswers = [];
+        answeredQuestions = [];
         cheatingCount = 0;
         cheatingFlag = '';
         loadQuestions();
@@ -534,6 +1507,14 @@
 
             window.addEventListener('blur', blurHandler);
             document.addEventListener('visibilitychange', visibilityHandler);
+            
+            // Prevent accidental refresh or leaving page
+            window.addEventListener('beforeunload', (e) => {
+                if (isExamActive) {
+                    e.preventDefault();
+                    e.returnValue = ''; // Required for Chrome
+                }
+            });
 
             // ตรวจจับการเปิด 2 จอ (Split-screen) หรือหน้าต่างป๊อปอัป
             var initialWindowHeight = window.innerHeight;
@@ -606,11 +1587,20 @@
             else if (e.key === 'Tab' || e.keyCode === 9) {
                 shouldBlock = true;
             }
-            // 7. If NOT in a typing field, block all keys except standard navigation
+            // 7. If NOT in a typing field, allow navigation and Pokémon game walk keys (WASD, Arrows, Space, Enter)
             else if (!isTypingField) {
-                const allowedNonTypingKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-                if (!allowedNonTypingKeys.includes(e.key)) {
+                const allowedMovementKeys = [
+                    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+                    'w', 'a', 's', 'd', 'W', 'A', 'S', 'D', ' ', 'Enter'
+                ];
+                if (!allowedMovementKeys.includes(e.key)) {
                     shouldBlock = true;
+                } else {
+                    // Check if Pokemon Map view wants to handle this key for walking
+                    if (window.handlePokeMapKey && window.handlePokeMapKey(e.key)) {
+                        e.preventDefault();
+                        return true;
+                    }
                 }
             }
 
@@ -852,7 +1842,11 @@
         }
 
         // Timer
-        startQuestionTimer();
+        if (currentExamMode === 'pokemon' && pokeSubStage === 'map') {
+            startQuestionTimer(20, true);
+        } else {
+            startQuestionTimer();
+        }
 
         // Buttons
         document.getElementById('nextQuestionBtn').disabled = true;
@@ -865,6 +1859,11 @@
             document.getElementById('nextQuestionBtn').classList.remove('hidden');
             document.getElementById('submitExamBtn').classList.add('hidden');
         }
+
+        // Synchronize with Pokémon Game Stage if engine is loaded
+        if (typeof updatePokemonExamState === 'function') {
+            updatePokemonExamState();
+        }
     }
 
     // ===== Writing Input Check =====
@@ -872,6 +1871,9 @@
         const has = el.value.trim().length > 0;
         document.getElementById('nextQuestionBtn').disabled = !has;
         document.getElementById('submitExamBtn').disabled = !has;
+        if (typeof syncPokeWritingInput === 'function') {
+            syncPokeWritingInput(el.value);
+        }
     }
 
     // ===== Select Option =====
@@ -881,15 +1883,25 @@
         el.querySelector('input').checked = true;
         document.getElementById('nextQuestionBtn').disabled = false;
         document.getElementById('submitExamBtn').disabled = false;
+        if (typeof syncPokeMoveSelection === 'function') {
+            syncPokeMoveSelection(index);
+        }
     }
 
     // ===== Timer =====
-    function startQuestionTimer(startFrom) {
+    function startQuestionTimer(startFrom, isMapTimer = false) {
         clearInterval(timerInterval);
         const currentQ = questions[currentQuestionIndex];
-        let timeLeft = (typeof startFrom === 'number' && startFrom > 0)
-            ? Math.floor(startFrom)
-            : (currentQ.type === 'writing' ? timeLimitWriting : timeLimitChoice);
+        
+        let timeLeft = 0;
+        if (isMapTimer) {
+            timeLeft = (typeof startFrom === 'number' && startFrom > 0) ? Math.floor(startFrom) : 20;
+        } else {
+            timeLeft = (typeof startFrom === 'number' && startFrom > 0)
+                ? Math.floor(startFrom)
+                : (currentQ && currentQ.type === 'writing' ? timeLimitWriting : timeLimitChoice);
+        }
+        
         questionTimeLeft = timeLeft;
 
         const timerEl = document.getElementById('timerNumber');
@@ -898,7 +1910,12 @@
         timerBox.classList.remove('warning');
         timerEl.classList.remove('timer-pulse');
 
-        if (currentQ.type === 'writing') {
+        if (isMapTimer) {
+            // Map timer UI style
+            timerBox.style.borderColor = '#38bdf8';
+            timerBox.style.background = 'rgba(56, 189, 248, 0.12)';
+            timerEl.style.color = '#38bdf8';
+        } else if (currentQ && currentQ.type === 'writing') {
             timerBox.style.borderColor = 'rgba(245,158,11,0.25)';
             timerBox.style.background = 'rgba(245,158,11,0.12)';
             timerEl.style.color = 'var(--amber)';
@@ -918,16 +1935,51 @@
             }
             if (questionTimeLeft <= 0) {
                 clearInterval(timerInterval);
-                handleTimeOut();
+                handleTimeOut(isMapTimer);
             }
         }, 1000);
     }
 
-    function handleTimeOut() {
+    function handleTimeOut(isMapTimer = false) {
         if (!isExamActive || isPaused || isSubmitting) return;
         const currentQ = questions[currentQuestionIndex];
+        const isPokemonMode = (currentExamMode === 'pokemon');
         
-        if (currentQ.type === 'writing') {
+        if (isMapTimer) {
+            Swal.fire({
+                title: 'มัวแต่เดินเล่น!',
+                text: 'เดินช้าเกินไป โปเกมอนป่าแอบขโมยคะแนนไปแล้ว 1 ข้อ!',
+                icon: 'warning',
+                timer: 2500,
+                showConfirmButton: false
+            });
+            setTimeout(() => {
+                // Find an unanswered question (prefer non-writing)
+                let unanswered = questions.map((_, i) => i).filter(i => !answeredQuestions.includes(i) && questions[i].type !== 'writing');
+                if (unanswered.length === 0) {
+                    unanswered = questions.map((_, i) => i).filter(i => !answeredQuestions.includes(i));
+                }
+                
+                if (unanswered.length > 0) {
+                    const lostIdx = unanswered[Math.floor(Math.random() * unanswered.length)];
+                    answeredQuestions.push(lostIdx);
+                    studentAnswers.push({
+                        questionId: String(questions[lostIdx].id),
+                        selectedOption: ''
+                    });
+                }
+                
+                if (answeredQuestions.length < questions.length) {
+                    startQuestionTimer(20, true);
+                    drawPokeMap();
+                } else {
+                    finishExam();
+                }
+            }, 2500);
+            return;
+        }
+
+        if (currentQ && currentQ.type === 'writing') {
             Swal.fire({
                 title: 'หมดเวลา!',
                 text: 'หมดเวลาทำข้อสอบอัตนัย ระบบกำลังบันทึกและส่งคำตอบโดยอัตโนมัติ',
@@ -941,15 +1993,34 @@
                 finishExam();
             }, 2500);
         } else {
-            Swal.fire({ title: 'หมดเวลา!', text: 'ระบบกำลังเปลี่ยนไปข้อถัดไป', icon: 'info', timer: 1500, showConfirmButton: false });
+            const timeoutMsg = isPokemonMode
+                ? '💨 โปเกมอนป่าหนีไปแล้ว! ข้อนี้ถูกข้ามไป'
+                : 'ระบบกำลังเปลี่ยนไปข้อถัดไป';
+            const timeoutIcon = isPokemonMode ? 'warning' : 'info';
+            const timeoutTitle = isPokemonMode ? 'โปเกมอนหนีไปแล้ว!' : 'หมดเวลา!';
+
+            Swal.fire({ title: timeoutTitle, text: timeoutMsg, icon: timeoutIcon, timer: 1500, showConfirmButton: false });
             setTimeout(() => {
                 collectAnswer();
-                currentQuestionIndex++;
-                if (currentQuestionIndex < questions.length) {
-                    displayQuestion();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                if (isPokemonMode) {
+                    if (!answeredQuestions.includes(currentQuestionIndex)) {
+                        answeredQuestions.push(currentQuestionIndex);
+                    }
+                    if (answeredQuestions.length < questions.length) {
+                        switchPokemonSubStage('map');
+                        drawPokeMap();
+                        startQuestionTimer(20, true);
+                    } else {
+                        finishExam();
+                    }
                 } else {
-                    finishExam();
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex < questions.length) {
+                        displayQuestion();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else {
+                        finishExam();
+                    }
                 }
             }, 1500);
         }
@@ -1117,6 +2188,1523 @@
             window.location.href = '/result';
         }
     }
+
+    /* ==========================================================================
+       🎮 POKÉMON RPG GAMIFIED EXAM ENGINE (เสียง, แผนที่เดิน, และระบบประลองข้อสอบ)
+       ========================================================================== */
+
+    // Sound FX Web Audio Synthesizer (Retro 8-bit Audio)
+    const PokeSoundFX = {
+        ctx: null,
+        muted: false,
+        init() {
+            if (!this.ctx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) this.ctx = new AudioCtx();
+            }
+            if (this.ctx && this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        },
+        tone(freq, type, duration, delay = 0, gainLevel = 0.12) {
+            if (this.muted) return;
+            this.init();
+            if (!this.ctx) return;
+            setTimeout(() => {
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(gainLevel, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch (e) {}
+            }, delay * 1000);
+        },
+        playStep() {
+            this.tone(130, 'triangle', 0.04, 0, 0.03);
+        },
+        playSelect() {
+            this.tone(523, 'sine', 0.07, 0, 0.08);
+            this.tone(659, 'sine', 0.09, 0.05, 0.08);
+        },
+        playEncounter() {
+            [261, 329, 392, 523, 659, 784].forEach((freq, idx) => {
+                this.tone(freq, 'sawtooth', 0.11, idx * 0.045, 0.12);
+            });
+        },
+        playAttack() {
+            if (this.muted) return;
+            this.init();
+            if (!this.ctx) return;
+            try {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(850, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.32);
+                gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.32);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.32);
+            } catch (e) {}
+        },
+        playHit() {
+            this.tone(100, 'square', 0.22, 0, 0.22);
+            this.tone(55, 'sawtooth', 0.28, 0.04, 0.2);
+        },
+        playLevelUp() {
+            const notes = [261, 329, 392, 523, 659, 784, 1046];
+            notes.forEach((freq, idx) => {
+                this.tone(freq, 'square', 0.1, idx * 0.065, 0.1);
+            });
+        },
+        playVictory() {
+            const fanfare = [523, 523, 523, 523, 415, 466, 523, 466, 523];
+            fanfare.forEach((freq, idx) => {
+                this.tone(freq, 'triangle', 0.15, idx * 0.08, 0.12);
+            });
+        }
+    };
+
+    function toggleSoundFx() {
+        PokeSoundFX.muted = !PokeSoundFX.muted;
+        const icon = document.getElementById('soundToggleIcon');
+        if (icon) {
+            icon.textContent = PokeSoundFX.muted ? '🔇' : '🔊';
+        }
+    }
+
+    // ===== AUTHENTIC POKÉMON PIXEL SPRITE ENGINE =====
+    function createPokeSprite(id, name, isBack = false) {
+        const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const showdownUrl = isBack
+            ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/back/${id}.gif`
+            : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${id}.gif`;
+        const showdownAni = isBack
+            ? `https://play.pokemonshowdown.com/sprites/ani-back/${cleanName}.gif`
+            : `https://play.pokemonshowdown.com/sprites/ani/${cleanName}.gif`;
+        const pixelPng = isBack
+            ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${id}.png`
+            : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+
+        return `<img src="${showdownUrl}" 
+                     alt="${name}" 
+                     class="poke-pixel-sprite" 
+                     loading="eager" 
+                     draggable="false"
+                     onerror="if(!this.dataset.retried){this.dataset.retried='1';this.src='${showdownAni}';}else if(this.dataset.retried==='1'){this.dataset.retried='2';this.src='${pixelPng}';}" />`;
+    }
+
+    const POKE_SPRITES = {
+        pikachuBack: createPokeSprite(25, 'pikachu', true),
+        gengar: createPokeSprite(94, 'gengar'),
+        charmander: createPokeSprite(4, 'charmander'),
+        bulbasaur: createPokeSprite(1, 'bulbasaur'),
+        squirtle: createPokeSprite(7, 'squirtle'),
+        charizard: createPokeSprite(6, 'charizard'),
+        snorlax: createPokeSprite(143, 'snorlax'),
+        blastoise: createPokeSprite(9, 'blastoise'),
+        lucario: createPokeSprite(448, 'lucario'),
+        venusaur: createPokeSprite(3, 'venusaur'),
+        dragonite: createPokeSprite(149, 'dragonite'),
+        gyarados: createPokeSprite(130, 'gyarados'),
+        eevee: createPokeSprite(133, 'eevee'),
+        rayquaza: createPokeSprite(384, 'rayquaza'),
+        mewtwo: createPokeSprite(150, 'mewtwo'),
+        mew: createPokeSprite(151, 'mew')
+    };
+
+    const POKE_ENEMIES = [
+        { name: 'Gengar', icon: '👻', type: 'Ghost/Poison', sprite: POKE_SPRITES.gengar },
+        { name: 'Charmander', icon: '🔥', type: 'Fire', sprite: POKE_SPRITES.charmander },
+        { name: 'Bulbasaur', icon: '🍃', type: 'Grass/Poison', sprite: POKE_SPRITES.bulbasaur },
+        { name: 'Squirtle', icon: '💧', type: 'Water', sprite: POKE_SPRITES.squirtle },
+        { name: 'Charizard', icon: '🔥', type: 'Fire/Flying', sprite: POKE_SPRITES.charizard },
+        { name: 'Snorlax', icon: '💤', type: 'Normal', sprite: POKE_SPRITES.snorlax },
+        { name: 'Blastoise', icon: '💧', type: 'Water', sprite: POKE_SPRITES.blastoise },
+        { name: 'Lucario', icon: '🥊', type: 'Fighting/Steel', sprite: POKE_SPRITES.lucario },
+        { name: 'Venusaur', icon: '🍃', type: 'Grass/Poison', sprite: POKE_SPRITES.venusaur },
+        { name: 'Dragonite', icon: '🐲', type: 'Dragon/Flying', sprite: POKE_SPRITES.dragonite },
+        { name: 'Gyarados', icon: '🌊', type: 'Water/Flying', sprite: POKE_SPRITES.gyarados },
+        { name: 'Eevee', icon: '🦊', type: 'Normal', sprite: POKE_SPRITES.eevee },
+        { name: 'Rayquaza', icon: '🐉', type: 'Dragon/Flying', sprite: POKE_SPRITES.rayquaza },
+        { name: 'Mewtwo', icon: '🔮', type: 'Psychic', sprite: POKE_SPRITES.mewtwo },
+        { name: 'Mew', icon: '✨', type: 'Psychic', sprite: POKE_SPRITES.mew }
+    ];
+
+    const POKE_MOVES_NAMES = [
+        { tag: '⚡ สายฟ้าฟาด (Thunderbolt)', desc: 'พลังไฟฟ้าแรงสูง' },
+        { tag: '💥 หางเหล็กกล้า (Iron Tail)', desc: 'จู่โจมด้วยหางเหล็ก' },
+        { tag: '🔮 บอลประจุไฟฟ้า (Electro Ball)', desc: 'ยิงบอลพลังงาน' },
+        { tag: '💨 พุ่งจู่โจมไว (Quick Attack)', desc: 'จู่โจมฉับไว' },
+        { tag: '🌟 ประกายดาว (Swift)', desc: 'โจมตีไม่พลาดเป้า' }
+    ];
+
+    // Global Mode States (enforced by Teacher's choice)
+    var currentExamMode = "<?= esc($examMode ?? 'classic') ?>";
+    var pokeSubStage = 'map'; // 'map' or 'battle'
+    var selectedPokemonMoveIndex = null;
+    var isPokeAttacking = false;
+
+    // View Mode Initialization
+    function initExamViewMode() {
+        const mode = "<?= esc($examMode ?? 'classic') ?>";
+        setExamViewMode(mode, false);
+    }
+
+    function toggleExamViewMode() {
+        // Locked by teacher - switching disabled
+        return;
+    }
+
+    function setExamViewMode(mode, showNotice) {
+        currentExamMode = mode;
+        localStorage.setItem('skj_exam_mode', mode);
+
+        const classicView = document.getElementById('classicExamView');
+        const pokemonView = document.getElementById('pokemonExamView');
+        const toggleBtnText = document.getElementById('examModeToggleText');
+        const toggleBtnIcon = document.getElementById('examModeToggleIcon');
+
+        if (mode === 'pokemon') {
+            classicView.classList.add('hidden');
+            pokemonView.classList.remove('hidden');
+            if (toggleBtnText) toggleBtnText.textContent = 'โหมดปกติ';
+            if (toggleBtnIcon) toggleBtnIcon.textContent = '📝';
+
+            // Start sound synthesizer context gently
+            PokeSoundFX.init();
+            initPokeMapCanvas();
+            updatePokemonExamState();
+
+            if (showNotice) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '🎮 เปลี่ยนเป็นโหมด Pokémon แล้ว!',
+                    text: 'เดินผจญภัยบนแผนที่เพื่อเผชิญหน้ากับคำถามโปเกมอน',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        } else {
+            pokemonView.classList.add('hidden');
+            classicView.classList.remove('hidden');
+            if (toggleBtnText) toggleBtnText.textContent = 'โหมด Pokémon';
+            if (toggleBtnIcon) toggleBtnIcon.textContent = '🎮';
+
+            if (showNotice) {
+                Swal.fire({
+                    icon: 'info',
+                    title: '📝 เปลี่ยนเป็นโหมดมาตรฐานแล้ว',
+                    timer: 1200,
+                    showConfirmButton: false
+                });
+            }
+        }
+    }
+
+    function switchPokemonSubStage(stage) {
+        pokeSubStage = stage;
+        const mapStage = document.getElementById('pokeMapStage');
+        const battleStage = document.getElementById('pokeBattleStage');
+        const btnMap = document.getElementById('btnShowMapStage');
+        const btnBattle = document.getElementById('btnShowBattleStage');
+
+        if (stage === 'battle') {
+            mapStage.classList.add('hidden');
+            battleStage.classList.remove('hidden');
+            btnBattle.classList.add('active');
+            btnMap.classList.remove('active');
+            PokeSoundFX.playEncounter();
+        } else {
+            battleStage.classList.add('hidden');
+            mapStage.classList.remove('hidden');
+            btnMap.classList.add('active');
+            btnBattle.classList.remove('active');
+            drawPokeMap();
+        }
+    }
+
+    function startPokemonBattleEncounter() {
+        // Dramatic encounter transition
+        PokeSoundFX.playEncounter();
+        const mapCard = document.getElementById('pokeMapStage');
+        mapCard.classList.add('screen-shake');
+        setTimeout(() => {
+            mapCard.classList.remove('screen-shake');
+            switchPokemonSubStage('battle');
+            displayQuestion();
+        }, 300);
+    }
+
+    // ===== OVERWORLD MAP ENGINE (Canvas 16-bit RPG) =====
+    var pokeCanvas, pokeCtx;
+    var pokeMapGrid = { cols: 16, rows: 10, tileSize: 40 };
+    var pokePlayer = {
+        gridX: 1,
+        gridY: 5,
+        targetX: 1,
+        targetY: 5,
+        screenX: 40,
+        screenY: 200,
+        direction: 'right',
+        walkFrame: 0,
+        isMoving: false
+    };
+    var pokeMilestones = [];
+
+    function initPokeMapCanvas() {
+        pokeCanvas = document.getElementById('pokeMapCanvas');
+        if (!pokeCanvas) return;
+
+        // Dynamically size the grid to be large enough for scattered placement and fit screen
+        const total = questions.length || 1;
+        const containerWidth = document.getElementById('pokemonExamView').clientWidth || window.innerWidth;
+        const baseCols = Math.max(12, Math.floor(containerWidth / 40)); // Dynamic width, min 12 cols
+        
+        // Ensure enough area for scattering: we want at least 4 tiles per question
+        const areaNeeded = total * 4;
+        const interiorCols = baseCols - 2;
+        const neededRows = Math.ceil(areaNeeded / interiorCols);
+        const totalRows = Math.max(12, neededRows + 2); // At least 12 rows
+
+        pokeMapGrid.cols = baseCols;
+        pokeMapGrid.rows = totalRows;
+        pokeMapGrid.tileSize = 40;
+
+        // Resize canvas to fit the grid
+        pokeCanvas.width = pokeMapGrid.cols * pokeMapGrid.tileSize;
+        pokeCanvas.height = pokeMapGrid.rows * pokeMapGrid.tileSize;
+
+        pokeCtx = pokeCanvas.getContext('2d');
+
+        // Calculate milestone locations along winding path
+        setupPokeMilestones();
+
+        // Tap/click on map to walk
+        pokeCanvas.onpointerdown = handleCanvasTapToMove;
+
+        // Start render loop if not started
+        if (!window.pokeLoopStarted) {
+            window.pokeLoopStarted = true;
+            requestAnimationFrame(pokeMapGameLoop);
+        }
+    }
+
+    function setupPokeMilestones() {
+        pokeMilestones = [];
+        const total = questions.length || 1;
+        const cols = pokeMapGrid.cols;
+        const rows = pokeMapGrid.rows;
+        const ts = pokeMapGrid.tileSize;
+
+        // Generate scattered waypoints across the grid
+        const waypoints = [];
+        // Keep track of used grid spaces to avoid overlap
+        const usedGrids = new Set();
+        // Also don't place on player's spawn point (2,2 roughly)
+        usedGrids.add("1,5");
+        usedGrids.add("2,5");
+        usedGrids.add("3,5");
+
+        // Helper to check if a grid is free (and its immediate neighbors aren't too crowded)
+        function isGridFree(x, y) {
+            if (usedGrids.has(`${x},${y}`)) return false;
+            // Ensure no immediate adjacent to keep some spacing
+            if (usedGrids.has(`${x-1},${y}`) || usedGrids.has(`${x+1},${y}`) ||
+                usedGrids.has(`${x},${y-1}`) || usedGrids.has(`${x},${y+1}`)) {
+                // If it's a very tight map, we might allow it, but try to avoid.
+                return Math.random() > 0.8; // 80% chance to reject adjacent
+            }
+            return true;
+        }
+
+        let attempts = 0;
+        for (let i = 0; i < total; i++) {
+            let placed = false;
+            while (!placed && attempts < 1000) {
+                attempts++;
+                const rx = Math.floor(Math.random() * (cols - 4)) + 2; // 2 to cols-3
+                const ry = Math.floor(Math.random() * (rows - 4)) + 2; // 2 to rows-3
+                
+                if (isGridFree(rx, ry)) {
+                    waypoints.push({ x: rx, y: ry });
+                    usedGrids.add(`${rx},${ry}`);
+                    placed = true;
+                }
+            }
+            if (!placed) {
+                // Fallback if map gets too full: just find ANY empty spot
+                for (let ry = 2; ry < rows - 2; ry++) {
+                    for (let rx = 2; rx < cols - 2; rx++) {
+                        if (!usedGrids.has(`${rx},${ry}`)) {
+                            waypoints.push({ x: rx, y: ry });
+                            usedGrids.add(`${rx},${ry}`);
+                            placed = true;
+                            break;
+                        }
+                    }
+                    if (placed) break;
+                }
+            }
+        }
+
+        for (let i = 0; i < total; i++) {
+            const wp = waypoints[i];
+            pokeMilestones.push({
+                questionIndex: i,
+                gridX: wp.x,
+                gridY: wp.y,
+                screenX: wp.x * ts + ts / 2,
+                screenY: wp.y * ts + ts / 2
+            });
+        }
+
+        // Initially align player near the left edge
+        if (pokeMilestones.length > 0) {
+            pokePlayer.gridX = 1;
+            pokePlayer.gridY = 5;
+            pokePlayer.targetX = 1;
+            pokePlayer.targetY = 5;
+            pokePlayer.screenX = 1 * ts + ts / 2;
+            pokePlayer.screenY = 5 * ts + ts / 2;
+        }
+    }
+
+    function syncPlayerToCurrentQuestion() {
+        if (!pokeMilestones[currentQuestionIndex]) return;
+        const targetMs = pokeMilestones[currentQuestionIndex];
+        // Place player 1 step left of milestone if possible
+        const px = Math.max(1, targetMs.gridX - 1);
+        const py = targetMs.gridY;
+        pokePlayer.gridX = px;
+        pokePlayer.gridY = py;
+        pokePlayer.targetX = px;
+        pokePlayer.targetY = py;
+        pokePlayer.screenX = px * pokeMapGrid.tileSize + pokeMapGrid.tileSize / 2;
+        pokePlayer.screenY = py * pokeMapGrid.tileSize + pokeMapGrid.tileSize / 2;
+    }
+
+    function handleCanvasTapToMove(e) {
+        if (!pokeCanvas) return;
+        const rect = pokeCanvas.getBoundingClientRect();
+        const scaleX = pokeCanvas.width / rect.width;
+        const scaleY = pokeCanvas.height / rect.height;
+        const clickX = (e.clientX - rect.left) * scaleX;
+        const clickY = (e.clientY - rect.top) * scaleY;
+
+        const targetGridX = Math.floor(clickX / pokeMapGrid.tileSize);
+        const targetGridY = Math.floor(clickY / pokeMapGrid.tileSize);
+
+        // Move one step toward clicked tile
+        const dx = targetGridX - pokePlayer.gridX;
+        const dy = targetGridY - pokePlayer.gridY;
+
+        if (Math.abs(dx) > Math.abs(dy)) {
+            pokeMapWalk(dx > 0 ? 'right' : 'left');
+        } else if (dy !== 0) {
+            pokeMapWalk(dy > 0 ? 'down' : 'up');
+        } else {
+            // Clicked directly on player's tile -> interact
+            pokeMapInteract();
+        }
+    }
+
+    function pokeMapWalk(dir) {
+        let nx = pokePlayer.gridX;
+        let ny = pokePlayer.gridY;
+
+        if (dir === 'up') { ny--; pokePlayer.direction = 'up'; }
+        else if (dir === 'down') { ny++; pokePlayer.direction = 'down'; }
+        else if (dir === 'left') { nx--; pokePlayer.direction = 'left'; }
+        else if (dir === 'right') { nx++; pokePlayer.direction = 'right'; }
+
+        // Boundaries check
+        if (nx >= 1 && nx < pokeMapGrid.cols - 1 && ny >= 1 && ny < pokeMapGrid.rows - 1) {
+            pokePlayer.gridX = nx;
+            pokePlayer.gridY = ny;
+            pokePlayer.walkFrame = (pokePlayer.walkFrame + 1) % 4;
+            PokeSoundFX.playStep();
+
+            // Check if stepped on milestone
+            checkMilestoneCollision();
+        }
+    }
+
+    function pokeMapInteract() {
+        checkMilestoneCollision();
+    }
+
+    function checkMilestoneCollision() {
+        // Find if player is standing on any milestone
+        const m = pokeMilestones.find(ms => ms.gridX === pokePlayer.gridX && ms.gridY === pokePlayer.gridY);
+        if (!m) return;
+
+        const idx = m.questionIndex;
+
+        if (answeredQuestions.includes(idx)) {
+            // Already answered
+            Swal.fire({
+                title: 'สำเร็จแล้ว!',
+                text: 'คุณปราบโปเกมอนตัวนี้ไปแล้ว!',
+                icon: 'info',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            return;
+        }
+
+        const q = questions[idx];
+        if (q && q.type === 'writing') {
+            // Check if all multiple choice are done
+            const writingCount = questions.filter(quest => quest.type === 'writing').length;
+            const requiredMcqCount = questions.length - writingCount;
+            const answeredMcqCount = answeredQuestions.filter(ansIdx => questions[ansIdx].type !== 'writing').length;
+
+            if (answeredMcqCount < requiredMcqCount) {
+                Swal.fire({
+                    title: 'ยังเข้าไม่ได้!',
+                    text: 'ต้องปราบโปเกมอนระดับปรนัยให้หมดก่อน ถึงจะเข้าสู้บอสข้อเขียนได้',
+                    icon: 'warning',
+                    confirmButtonText: 'ตกลง'
+                });
+                return;
+            }
+        }
+
+        // Set this question as current, update UI, and start battle
+        currentQuestionIndex = idx;
+        startPokemonBattleEncounter();
+    }
+
+    // Global Key Listener for Map
+    window.handlePokeMapKey = function(key) {
+        if (currentExamMode !== 'pokemon' || pokeSubStage !== 'map') return false;
+
+        if (key === 'ArrowUp' || key === 'w' || key === 'W') {
+            pokeMapWalk('up');
+            return true;
+        }
+        if (key === 'ArrowDown' || key === 's' || key === 'S') {
+            pokeMapWalk('down');
+            return true;
+        }
+        if (key === 'ArrowLeft' || key === 'a' || key === 'A') {
+            pokeMapWalk('left');
+            return true;
+        }
+        if (key === 'ArrowRight' || key === 'd' || key === 'D') {
+            pokeMapWalk('right');
+            return true;
+        }
+        if (key === ' ' || key === 'Enter') {
+            pokeMapInteract();
+            return true;
+        }
+        return false;
+    };
+
+    function pokeMapGameLoop() {
+        if (currentExamMode === 'pokemon' && pokeSubStage === 'map') {
+            drawPokeMap();
+        }
+        requestAnimationFrame(pokeMapGameLoop);
+    }
+
+    // ===== AUTHENTIC POKÉMON GBA OVERWORLD ENGINE =====
+
+    // Helper: Determine if tile is part of Route 1 winding path
+    function isPokemonPath(c, r, cols, rows) {
+        // Main horizontal route around row 5
+        if (r === 5 && c >= 1 && c <= cols - 2) return true;
+        // Vertical path crossing
+        const midCol = Math.floor(cols / 2);
+        if ((c === midCol || c === midCol - 1) && r >= 2 && r <= rows - 3) return true;
+        // Branch to top-right
+        if (c >= cols - 5 && r === 3) return true;
+        // Branch to bottom-left
+        if (c === 3 && r >= 5 && r <= rows - 3) return true;
+        return false;
+    }
+
+    // Helper: Determine if tile is Wild Tall Grass (พงหญ้าจับโปเกมอน)
+    function isPokemonTallGrass(c, r, cols, rows) {
+        if (isPokemonPath(c, r, cols, rows)) return false;
+        // Natural tall grass patches across the route
+        const seed = (c * 7 + r * 13) % 17;
+        return seed === 2 || seed === 5 || seed === 9 || seed === 14;
+    }
+
+    // 1. Draw Authentic Pokémon GBA Oak Tree
+    function drawPokemonOakTree(ctx, x, y, size) {
+        ctx.save();
+        // Ground shadow
+        ctx.fillStyle = 'rgba(15, 45, 15, 0.45)';
+        ctx.beginPath();
+        ctx.ellipse(x + size / 2, y + size - 3, size * 0.42, size * 0.18, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Wood Trunk
+        const trunkW = size * 0.28;
+        const trunkH = size * 0.36;
+        const trunkX = x + (size - trunkW) / 2;
+        const trunkY = y + size - trunkH - 2;
+
+        ctx.fillStyle = '#6e3a15';
+        ctx.fillRect(trunkX, trunkY, trunkW, trunkH);
+        ctx.fillStyle = '#8a4b1c';
+        ctx.fillRect(trunkX + 2, trunkY, trunkW * 0.45, trunkH);
+        ctx.fillStyle = '#4a250a';
+        ctx.fillRect(trunkX + trunkW - 2, trunkY, 2, trunkH);
+
+        // Canopy Layer 1 (Dark Foliage Outline & Deep Shade)
+        ctx.fillStyle = '#0f380f';
+        ctx.beginPath();
+        ctx.arc(x + size / 2, y + size * 0.44, size * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Canopy Layer 2 (Forest Green Body)
+        ctx.fillStyle = '#1c7524';
+        ctx.beginPath();
+        ctx.arc(x + size / 2, y + size * 0.42, size * 0.42, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Canopy Layer 3 (Vibrant Leaf Clusters)
+        ctx.fillStyle = '#2ea438';
+        ctx.beginPath();
+        ctx.arc(x + size * 0.42, y + size * 0.38, size * 0.33, 0, Math.PI * 2);
+        ctx.arc(x + size * 0.60, y + size * 0.45, size * 0.25, 0, Math.PI * 2);
+        ctx.arc(x + size * 0.48, y + size * 0.52, size * 0.24, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Canopy Layer 4 (Sunlight Highlight Top-Left)
+        ctx.fillStyle = '#60cf69';
+        ctx.beginPath();
+        ctx.arc(x + size * 0.38, y + size * 0.32, size * 0.22, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Highlight Leaf Pixels
+        ctx.fillStyle = '#9cf5a3';
+        ctx.fillRect(x + size * 0.34, y + size * 0.28, 3, 3);
+        ctx.fillRect(x + size * 0.42, y + size * 0.25, 4, 3);
+
+        ctx.restore();
+    }
+
+    // 2. Draw Authentic Pokémon Tall Grass (พงหญ้าสูงสำหรับจับโปเกมอน)
+    function drawPokemonTallGrass(ctx, x, y, size) {
+        ctx.save();
+        // Deep moss soil under grass
+        ctx.fillStyle = '#265e20';
+        ctx.fillRect(x, y, size, size);
+
+        // Dark layered grass blades
+        ctx.fillStyle = '#36852a';
+        for (let i = 0; i < 4; i++) {
+            const bx = x + i * (size / 4) + 1;
+            ctx.beginPath();
+            ctx.moveTo(bx, y + size);
+            ctx.lineTo(bx + 4, y + 8);
+            ctx.lineTo(bx + 8, y + size);
+            ctx.fill();
+        }
+
+        // Vibrant emerald grass blades
+        ctx.fillStyle = '#4bb83a';
+        for (let i = 0; i < 4; i++) {
+            const bx = x + i * (size / 4) + 2;
+            ctx.beginPath();
+            ctx.moveTo(bx + 1, y + size);
+            ctx.lineTo(bx + 4, y + 10);
+            ctx.lineTo(bx + 7, y + size);
+            ctx.fill();
+        }
+
+        // Bright sunlight blade tips
+        ctx.fillStyle = '#82f06e';
+        for (let i = 0; i < 4; i++) {
+            const bx = x + i * (size / 4) + 3;
+            ctx.fillRect(bx + 1, y + 8, 2, 4);
+        }
+        ctx.restore();
+    }
+
+    // 3. Draw Wild Flowers
+    function drawPokemonFlowers(ctx, x, y, color) {
+        ctx.save();
+        ctx.fillStyle = color;
+        // 4 petals
+        ctx.beginPath();
+        ctx.arc(x - 2.5, y, 2.5, 0, Math.PI * 2);
+        ctx.arc(x + 2.5, y, 2.5, 0, Math.PI * 2);
+        ctx.arc(x, y - 2.5, 2.5, 0, Math.PI * 2);
+        ctx.arc(x, y + 2.5, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        // Yellow center
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.arc(x, y, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    // 4. Draw Wooden Fence
+    function drawPokemonFence(ctx, x, y, size) {
+        ctx.save();
+        // Posts
+        ctx.fillStyle = '#6b3710';
+        ctx.fillRect(x + 4, y + 8, 6, size - 12);
+        ctx.fillRect(x + size - 10, y + 8, 6, size - 12);
+        // Post Caps
+        ctx.fillStyle = '#8b4b1a';
+        ctx.fillRect(x + 3, y + 6, 8, 3);
+        ctx.fillRect(x + size - 11, y + 6, 8, 3);
+        // Rails
+        ctx.fillStyle = '#92400e';
+        ctx.fillRect(x, y + 13, size, 5);
+        ctx.fillRect(x, y + 23, size, 5);
+        // Highlight
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(x, y + 13, size, 1.5);
+        ctx.fillRect(x, y + 23, size, 1.5);
+        ctx.restore();
+    }
+
+    // 5. Draw Route Signpost
+    function drawPokemonSignpost(ctx, x, y) {
+        ctx.save();
+        // Post
+        ctx.fillStyle = '#5c3210';
+        ctx.fillRect(x + 17, y + 16, 6, 20);
+        // Wooden Board
+        ctx.fillStyle = '#a16207';
+        ctx.fillRect(x + 6, y + 8, 28, 16);
+        ctx.strokeStyle = '#451a03';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x + 6, y + 8, 28, 16);
+        // White writing line
+        ctx.fillStyle = '#fef3c7';
+        ctx.fillRect(x + 9, y + 12, 22, 3);
+        ctx.fillRect(x + 11, y + 17, 18, 2);
+        ctx.restore();
+    }
+
+    // Preload Follower Pixel Pikachu Sprite
+    const miniPikaImg = new Image();
+    miniPikaImg.crossOrigin = 'anonymous';
+    miniPikaImg.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png';
+    let miniPikaLoaded = false;
+    miniPikaImg.onload = () => { miniPikaLoaded = true; };
+
+    function drawPokeMap() {
+        if (!pokeCtx) return;
+        const w = pokeCanvas.width;
+        const h = pokeCanvas.height;
+        const ts = pokeMapGrid.tileSize;
+        const cols = pokeMapGrid.cols;
+        const rows = pokeMapGrid.rows;
+
+        // 1. Lush Emerald Base Grass
+        pokeCtx.fillStyle = '#4ea12a';
+        pokeCtx.fillRect(0, 0, w, h);
+
+        // 2. Render Authentic Pokémon Terrain Tiles
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const x = c * ts;
+                const y = r * ts;
+                const isBorder = (r === 0 || r === rows - 1 || c === 0 || c === cols - 1);
+                const isPath = isPokemonPath(c, r, cols, rows);
+                const isTallGrass = isPokemonTallGrass(c, r, cols, rows);
+
+                if (isBorder) {
+                    // Border: Lush Oak Trees with fence openings
+                    if (r === 5 && c === 0) {
+                        // Route entrance opening!
+                        pokeCtx.fillStyle = '#dca35a';
+                        pokeCtx.fillRect(x, y, ts, ts);
+                    } else if (r === 0 && (c === 4 || c === 5)) {
+                        // Wooden fence top
+                        pokeCtx.fillStyle = '#52a82e';
+                        pokeCtx.fillRect(x, y, ts, ts);
+                        drawPokemonFence(pokeCtx, x, y, ts);
+                    } else {
+                        drawPokemonOakTree(pokeCtx, x, y, ts);
+                    }
+                } else if (isPath) {
+                    // Sandy Dirt Road (Route 1)
+                    pokeCtx.fillStyle = '#dca35a';
+                    pokeCtx.fillRect(x, y, ts, ts);
+
+                    // Dirt shading and texture
+                    pokeCtx.fillStyle = '#c58d45';
+                    pokeCtx.fillRect(x, y + ts - 3, ts, 3);
+                    pokeCtx.fillRect(x + ts - 3, y, 3, ts);
+
+                    // Stepping pebbles
+                    if ((c * 5 + r * 7) % 3 === 0) {
+                        pokeCtx.fillStyle = '#f0c78a';
+                        pokeCtx.fillRect(x + 8, y + 10, 4, 3);
+                        pokeCtx.fillRect(x + 22, y + 24, 3, 3);
+                        pokeCtx.fillStyle = '#9e6d2a';
+                        pokeCtx.fillRect(x + 12, y + 13, 3, 2);
+                    }
+
+                    // Green grass fringe encroaching on path
+                    pokeCtx.fillStyle = '#52a82e';
+                    if (!isPokemonPath(c, r - 1, cols, rows)) {
+                        pokeCtx.fillRect(x + 4, y, 6, 2);
+                        pokeCtx.fillRect(x + 20, y, 8, 3);
+                    }
+                    if (!isPokemonPath(c, r + 1, cols, rows)) {
+                        pokeCtx.fillRect(x + 8, y + ts - 3, 7, 3);
+                        pokeCtx.fillRect(x + 24, y + ts - 2, 6, 2);
+                    }
+                } else if (isTallGrass) {
+                    // Wild Encounter Tall Grass
+                    drawPokemonTallGrass(pokeCtx, x, y, ts);
+                } else {
+                    // Vibrant Lawn Lawn (Alternating checker tones)
+                    pokeCtx.fillStyle = ((r + c) % 2 === 0) ? '#55ab30' : '#4ea02a';
+                    pokeCtx.fillRect(x, y, ts, ts);
+
+                    // Micro grass blades
+                    if ((c * 3 + r * 7) % 4 === 0) {
+                        pokeCtx.fillStyle = '#71d044';
+                        pokeCtx.fillRect(x + 10, y + 16, 2, 6);
+                        pokeCtx.fillRect(x + 13, y + 13, 2, 9);
+                        pokeCtx.fillRect(x + 16, y + 17, 2, 5);
+                    }
+
+                    // Wild Flowers on special tiles
+                    if ((c * 11 + r * 17) % 9 === 0) {
+                        const flowerColors = ['#ef4444', '#fde047', '#38bdf8', '#f472b6'];
+                        const fCol = flowerColors[(c + r) % flowerColors.length];
+                        drawPokemonFlowers(pokeCtx, x + 15, y + 18, fCol);
+                        drawPokemonFlowers(pokeCtx, x + 25, y + 24, fCol);
+                    }
+                }
+            }
+        }
+
+        // 3. Draw Route 1 Signpost near player spawn
+        drawPokemonSignpost(pokeCtx, 1 * ts + 6, 4 * ts + 4);
+
+        // 4. Draw Question Milestone Markers (3D Realistic Pokéballs)
+        pokeMilestones.forEach((m, idx) => {
+            const isCompleted = answeredQuestions.includes(idx);
+            
+            // Check writing lock
+            const q = questions[idx];
+            let isLocked = false;
+            if (q && q.type === 'writing' && !isCompleted) {
+                const writingCount = questions.filter(quest => quest.type === 'writing').length;
+                const requiredMcqCount = questions.length - writingCount;
+                const answeredMcqCount = answeredQuestions.filter(ansIdx => questions[ansIdx].type !== 'writing').length;
+                if (answeredMcqCount < requiredMcqCount) {
+                    isLocked = true;
+                }
+            }
+
+            pokeCtx.save();
+            pokeCtx.translate(m.screenX, m.screenY);
+
+            const radius = 16;
+
+            // Ground Shadow beneath Pokéball
+            pokeCtx.fillStyle = 'rgba(10, 30, 10, 0.45)';
+            pokeCtx.beginPath();
+            pokeCtx.ellipse(0, radius + 2, radius * 0.9, 5, 0, 0, Math.PI * 2);
+            pokeCtx.fill();
+
+            if (isCompleted) {
+                // Completed: Shiny Golden Gym Badge (Star of Victory)
+                pokeCtx.fillStyle = '#fbbf24';
+                pokeCtx.beginPath();
+                pokeCtx.arc(0, 0, radius, 0, Math.PI * 2);
+                pokeCtx.fill();
+                pokeCtx.strokeStyle = '#b45309';
+                pokeCtx.lineWidth = 2.5;
+                pokeCtx.stroke();
+
+                // Shiny specular highlight
+                pokeCtx.fillStyle = '#fef08a';
+                pokeCtx.beginPath();
+                pokeCtx.arc(-4, -4, 5, 0, Math.PI * 2);
+                pokeCtx.fill();
+
+                // Star icon
+                pokeCtx.fillStyle = '#78350f';
+                pokeCtx.font = 'bold 15px sans-serif';
+                pokeCtx.textAlign = 'center';
+                pokeCtx.textBaseline = 'middle';
+                pokeCtx.fillText('★', 0, 1);
+
+                // Small "DONE" tag
+                pokeCtx.fillStyle = '#15803d';
+                pokeCtx.beginPath();
+                pokeCtx.roundRect(-16, -radius - 12, 32, 11, 4);
+                pokeCtx.fill();
+                pokeCtx.fillStyle = '#ffffff';
+                pokeCtx.font = 'bold 8px sans-serif';
+                pokeCtx.fillText('✓ พิชิต', 0, -radius - 7);
+
+            } else if (isLocked) {
+                // Locked (Writing question): Dark Armored Steel Sphere with Heavy Padlock
+                pokeCtx.fillStyle = '#334155';
+                pokeCtx.beginPath();
+                pokeCtx.arc(0, 0, radius, 0, Math.PI * 2);
+                pokeCtx.fill();
+                pokeCtx.strokeStyle = '#0f172a';
+                pokeCtx.lineWidth = 2.5;
+                pokeCtx.stroke();
+
+                // Lock icon (emoji)
+                pokeCtx.fillStyle = '#e2e8f0';
+                pokeCtx.font = 'bold 13px sans-serif';
+                pokeCtx.textAlign = 'center';
+                pokeCtx.textBaseline = 'middle';
+                pokeCtx.fillText('🔒', 0, 1);
+                
+                // Floating Lock Badge
+                pokeCtx.fillStyle = '#475569';
+                pokeCtx.beginPath();
+                pokeCtx.roundRect(-18, -radius - 12, 36, 11, 4);
+                pokeCtx.fill();
+                pokeCtx.fillStyle = '#f8fafc';
+                pokeCtx.font = 'bold 8px sans-serif';
+                pokeCtx.fillText(`ข้อ ${idx + 1} ล็อก`, 0, -radius - 7);
+
+            } else {
+                // Available: Authentic 3D Shaded Pokéball
+                const isNear = (pokePlayer.gridX === m.gridX && pokePlayer.gridY === m.gridY);
+                
+                // Pulsing energy beacon ring
+                const pulse = Math.sin(Date.now() / 180) * 4;
+                pokeCtx.strokeStyle = isNear ? 'rgba(56, 189, 248, 0.9)' : 'rgba(34, 197, 94, 0.5)';
+                pokeCtx.lineWidth = isNear ? 3 : 2;
+                pokeCtx.beginPath();
+                pokeCtx.arc(0, radius + 2, radius + (isNear ? 8 : 4) + pulse, 0, Math.PI * 2);
+                pokeCtx.stroke();
+
+                // 1. Top Half: Vivid Crimson with 3D Radial Gradient
+                const topGrad = pokeCtx.createRadialGradient(-4, -6, 2, 0, 0, radius);
+                topGrad.addColorStop(0, '#f87171');
+                topGrad.addColorStop(0.5, '#dc2626');
+                topGrad.addColorStop(1, '#991b1b');
+                pokeCtx.fillStyle = topGrad;
+                pokeCtx.beginPath();
+                pokeCtx.arc(0, 0, radius, Math.PI, 0, false);
+                pokeCtx.closePath();
+                pokeCtx.fill();
+
+                // Specular curved gloss on upper dome
+                pokeCtx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                pokeCtx.beginPath();
+                pokeCtx.ellipse(-4, -8, 6, 3, -Math.PI / 6, 0, Math.PI * 2);
+                pokeCtx.fill();
+
+                // 2. Bottom Half: Clean White with 3D Ambient Shade
+                const botGrad = pokeCtx.createRadialGradient(-3, 4, 2, 0, 2, radius);
+                botGrad.addColorStop(0, '#ffffff');
+                botGrad.addColorStop(0.7, '#e2e8f0');
+                botGrad.addColorStop(1, '#94a3b8');
+                pokeCtx.fillStyle = botGrad;
+                pokeCtx.beginPath();
+                pokeCtx.arc(0, 0, radius, 0, Math.PI, false);
+                pokeCtx.closePath();
+                pokeCtx.fill();
+
+                // 3. Black Center Band
+                pokeCtx.strokeStyle = '#0f172a';
+                pokeCtx.lineWidth = 3;
+                pokeCtx.beginPath();
+                pokeCtx.moveTo(-radius, 0);
+                pokeCtx.lineTo(radius, 0);
+                pokeCtx.stroke();
+
+                // 4. Center Button with Metallic Core
+                pokeCtx.fillStyle = '#0f172a';
+                pokeCtx.beginPath();
+                pokeCtx.arc(0, 0, 5.5, 0, Math.PI * 2);
+                pokeCtx.fill();
+
+                pokeCtx.fillStyle = '#ffffff';
+                pokeCtx.beginPath();
+                pokeCtx.arc(0, 0, 3.5, 0, Math.PI * 2);
+                pokeCtx.fill();
+
+                // Inner core LED (cyan glowing dot)
+                pokeCtx.fillStyle = '#38bdf8';
+                pokeCtx.beginPath();
+                pokeCtx.arc(0, 0, 1.8, 0, Math.PI * 2);
+                pokeCtx.fill();
+
+                // Outer crisp sphere outline
+                pokeCtx.strokeStyle = '#0f172a';
+                pokeCtx.lineWidth = 1.5;
+                pokeCtx.beginPath();
+                pokeCtx.arc(0, 0, radius, 0, Math.PI * 2);
+                pokeCtx.stroke();
+
+                // Floating Info Badge above Pokéball
+                pokeCtx.fillStyle = isNear ? '#0284c7' : '#1e293b';
+                pokeCtx.beginPath();
+                pokeCtx.roundRect(-14, -radius - 13, 28, 11, 4);
+                pokeCtx.fill();
+                pokeCtx.strokeStyle = isNear ? '#38bdf8' : '#64748b';
+                pokeCtx.lineWidth = 1;
+                pokeCtx.stroke();
+
+                pokeCtx.fillStyle = '#ffffff';
+                pokeCtx.font = 'bold 8px sans-serif';
+                pokeCtx.textAlign = 'center';
+                pokeCtx.textBaseline = 'middle';
+                pokeCtx.fillText(`ข้อ ${idx + 1}`, 0, -radius - 8);
+
+                // If player is standing directly on it: Bouncing Action Arrow
+                if (isNear) {
+                    const arrowY = -radius - 20 + pulse;
+                    pokeCtx.fillStyle = '#facc15';
+                    pokeCtx.beginPath();
+                    pokeCtx.moveTo(0, arrowY + 5);
+                    pokeCtx.lineTo(-5, arrowY);
+                    pokeCtx.lineTo(5, arrowY);
+                    pokeCtx.closePath();
+                    pokeCtx.fill();
+                }
+            }
+            pokeCtx.restore();
+        });
+
+        // 5. Smooth Player Coordinates towards target
+        const targetScreenX = pokePlayer.gridX * ts + ts / 2;
+        const targetScreenY = pokePlayer.gridY * ts + ts / 2;
+        pokePlayer.screenX += (targetScreenX - pokePlayer.screenX) * 0.35;
+        pokePlayer.screenY += (targetScreenY - pokePlayer.screenY) * 0.35;
+
+        // 6. Draw Follower Pikachu Sprite (trailing behind player)
+        const pikaOffset = (pokePlayer.direction === 'left') ? 18 : -18;
+        drawMiniPikachu(pokeCtx, pokePlayer.screenX + pikaOffset, pokePlayer.screenY + 4, pokePlayer.direction);
+
+        // 7. Draw Trainer Ash Ketchum Sprite
+        drawMiniTrainer(pokeCtx, pokePlayer.screenX, pokePlayer.screenY, pokePlayer.direction, pokePlayer.walkFrame);
+    }
+
+    function drawMiniTrainer(ctx, x, y, dir, frame) {
+        ctx.save();
+        ctx.translate(x, y);
+
+        // Ground shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.32)';
+        ctx.beginPath();
+        ctx.ellipse(0, 13, 10, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        const bob = (frame % 2 === 1) ? -2 : 0;
+        const legSwing = (frame % 2 === 1) ? 3 : -3;
+
+        // 1. Pants & Shoes (Classic Jeans + Red/White Sneakers)
+        if (dir === 'left' || dir === 'right') {
+            const flip = (dir === 'left') ? -1 : 1;
+            ctx.fillStyle = '#1e3a8a';
+            ctx.fillRect(-3 * flip + legSwing, 4 + bob, 5, 8);
+            ctx.fillRect(1 * flip - legSwing, 4 + bob, 5, 8);
+            // Red Sneakers with white sole
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(-4 * flip + legSwing, 11 + bob, 7, 3);
+            ctx.fillRect(0 * flip - legSwing, 11 + bob, 7, 3);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-4 * flip + legSwing, 13 + bob, 7, 1.5);
+            ctx.fillRect(0 * flip - legSwing, 13 + bob, 7, 1.5);
+        } else {
+            ctx.fillStyle = '#1e3a8a';
+            ctx.fillRect(-6, 4 + bob + (dir === 'up' ? legSwing : 0), 5, 8);
+            ctx.fillRect(1, 4 + bob + (dir === 'up' ? -legSwing : 0), 5, 8);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(-7, 11 + bob, 6, 3);
+            ctx.fillRect(1, 11 + bob, 6, 3);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-7, 13 + bob, 6, 1.5);
+            ctx.fillRect(1, 13 + bob, 6, 1.5);
+        }
+
+        // 2. Green Adventure Backpack (visible from up, left, right)
+        if (dir === 'up') {
+            ctx.fillStyle = '#15803d';
+            ctx.fillRect(-7, -6 + bob, 14, 10);
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(-5, -4 + bob, 10, 6);
+        } else if (dir === 'left') {
+            ctx.fillStyle = '#15803d';
+            ctx.fillRect(3, -6 + bob, 5, 9);
+        } else if (dir === 'right') {
+            ctx.fillStyle = '#15803d';
+            ctx.fillRect(-8, -6 + bob, 5, 9);
+        }
+
+        // 3. Classic Indigo League Jacket (Blue vest with open white collar & yellow trim)
+        ctx.fillStyle = '#2563eb';
+        ctx.fillRect(-7, -6 + bob, 14, 11);
+        if (dir !== 'up') {
+            // White open collar & dark undershirt
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-3, -6 + bob, 6, 6);
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(-2, -3 + bob, 4, 4);
+            // Yellow pocket trim
+            ctx.fillStyle = '#facc15';
+            ctx.fillRect(-6, 2 + bob, 3, 2);
+            ctx.fillRect(3, 2 + bob, 3, 2);
+        }
+
+        // 4. Head, Spiky Hair & Face
+        // Spiky Black Hair
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(0, -11 + bob, 9, 0, Math.PI * 2);
+        ctx.fill();
+        // Hair tufts
+        ctx.beginPath();
+        ctx.moveTo(-9, -11 + bob); ctx.lineTo(-12, -7 + bob); ctx.lineTo(-7, -5 + bob);
+        ctx.moveTo(9, -11 + bob); ctx.lineTo(12, -7 + bob); ctx.lineTo(7, -5 + bob);
+        ctx.fill();
+
+        // Warm Skin Face
+        ctx.fillStyle = '#fed7aa';
+        ctx.beginPath();
+        ctx.arc(0, -11 + bob, 7, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Face Details
+        if (dir === 'down') {
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(-4, -12 + bob, 2, 3);
+            ctx.fillRect(2, -12 + bob, 2, 3);
+            // Z marks on cheeks
+            ctx.strokeStyle = '#ea580c';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-5, -8 + bob); ctx.lineTo(-3, -7 + bob);
+            ctx.moveTo(3, -7 + bob); ctx.lineTo(5, -8 + bob);
+            ctx.stroke();
+        } else if (dir === 'left') {
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(-4, -12 + bob, 2, 3);
+        } else if (dir === 'right') {
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(2, -12 + bob, 2, 3);
+        }
+
+        // 5. Iconic Red Pokémon Cap & Emblem
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(0, -14 + bob, 8, Math.PI, 0, false);
+        ctx.fill();
+
+        if (dir !== 'up') {
+            // White front cap dome
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, -15 + bob, 4.5, Math.PI, 0, false);
+            ctx.fill();
+            // Green Pokémon League Semi-circle logo
+            ctx.fillStyle = '#16a34a';
+            ctx.beginPath();
+            ctx.arc(0, -16 + bob, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // White Visor
+        ctx.fillStyle = '#ffffff';
+        if (dir === 'left') {
+            ctx.fillRect(-11, -14 + bob, 8, 3);
+        } else if (dir === 'right') {
+            ctx.fillRect(3, -14 + bob, 8, 3);
+        } else if (dir === 'down') {
+            ctx.fillRect(-5, -13 + bob, 10, 3);
+        }
+
+        ctx.restore();
+    }
+
+    function drawMiniPikachu(ctx, x, y, dir = 'right') {
+        ctx.save();
+        // Ground Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(x, y + 8, 8, 3.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (miniPikaLoaded) {
+            ctx.imageSmoothingEnabled = false;
+            const size = 32;
+            ctx.translate(x, y);
+            if (dir === 'left') {
+                ctx.scale(-1, 1);
+            }
+            ctx.drawImage(miniPikaImg, -size / 2, -size / 2 - 2, size, size);
+        } else {
+            // Fallback crisp vector
+            ctx.translate(x, y);
+            if (dir === 'left') ctx.scale(-1, 1);
+
+            // Yellow Body
+            ctx.fillStyle = '#ffcb05';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 7, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ears with black tips
+            ctx.fillStyle = '#ffcb05';
+            ctx.beginPath();
+            ctx.moveTo(-4, -4); ctx.lineTo(-7, -10); ctx.lineTo(-2, -6);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.moveTo(-5, -7); ctx.lineTo(-7, -10); ctx.lineTo(-4, -8);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffcb05';
+            ctx.beginPath();
+            ctx.moveTo(4, -4); ctx.lineTo(7, -10); ctx.lineTo(2, -6);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.moveTo(5, -7); ctx.lineTo(7, -10); ctx.lineTo(4, -8);
+            ctx.fill();
+
+            // Red Cheek
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(-3, 0, 1.8, 0, Math.PI * 2);
+            ctx.arc(3, 0, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Lightning Tail
+            ctx.strokeStyle = '#ffcb05';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(4, 2); ctx.lineTo(8, -1); ctx.lineTo(6, -4); ctx.lineTo(11, -7);
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+
+    // ===== BATTLE ARENA ENGINE (สนามประลองโปเกมอน) =====
+    function updatePokemonExamState() {
+        if (!questions || questions.length === 0) return;
+        const total = questions.length;
+        const current = currentQuestionIndex + 1;
+        const q = questions[currentQuestionIndex];
+        if (!q) return;
+
+        // 1. Update Route & Milestone Header Text
+        const routeTitle = document.getElementById('pokeRouteTitle');
+        const milestoneText = document.getElementById('pokeMilestoneText');
+        if (routeTitle) routeTitle.textContent = `ถนนสายวิชาการ (Route ${current})`;
+        if (milestoneText) milestoneText.textContent = `จุดข้อสอบที่ ${current} / ${total}`;
+
+        // 2. Select Enemy for Current Question
+        const enemyData = POKE_ENEMIES[currentQuestionIndex % POKE_ENEMIES.length];
+        const enemyName = document.getElementById('pokeEnemyName');
+        const enemyLv = document.getElementById('pokeEnemyLv');
+        const enemySprite = document.getElementById('pokeEnemySprite');
+        const enemyHpFill = document.getElementById('pokeEnemyHpFill');
+
+        if (enemyName) enemyName.innerHTML = `<span>${enemyData.icon}</span> ${enemyData.name}`;
+        if (enemyLv) enemyLv.textContent = `Lv. ${5 + currentQuestionIndex * 2}`;
+        if (enemySprite) {
+            enemySprite.innerHTML = enemyData.sprite;
+            enemySprite.classList.remove('enemy-hit-anim', 'enemy-fainted');
+            enemySprite.style.opacity = '1';
+        }
+        const skillEffect = document.getElementById('pokeSkillEffect');
+        if (skillEffect) {
+            skillEffect.className = 'poke-skill-effect';
+        }
+        if (enemyHpFill) {
+            enemyHpFill.style.width = '100%';
+            enemyHpFill.style.backgroundColor = '#10b981';
+        }
+
+        // 3. Update Player Pikachu Info
+        const playerSprite = document.getElementById('pokePlayerSprite');
+        const playerLv = document.getElementById('pokePlayerLv');
+        const playerExpFill = document.getElementById('pokePlayerExpFill');
+        const playerHpFill = document.getElementById('pokePlayerHpFill');
+
+        if (playerSprite) {
+            playerSprite.innerHTML = POKE_SPRITES.pikachuBack;
+            playerSprite.classList.remove('player-attack-anim');
+        }
+        if (playerLv) playerLv.textContent = `Lv. ${5 + Math.floor(currentQuestionIndex * 1.5)}`;
+        if (playerHpFill) playerHpFill.style.width = '100%';
+        if (playerExpFill) {
+            const expPercent = Math.min(100, Math.floor(((current - 1) / total) * 100));
+            playerExpFill.style.width = `${expPercent}%`;
+        }
+
+        // 4. Update Battle Dialog with Question
+        const qTitle = document.getElementById('pokeBattleQTitle');
+        const qText = document.getElementById('pokeBattleQText');
+        const qImage = document.getElementById('pokeBattleQImage');
+        const narrator = document.getElementById('pokeBattleNarrator');
+
+        if (qTitle) {
+            const typeLabel = (q.type === 'writing') ? 'อัตนัย (ข้อเขียน)' : 'ปรนัย (เลือกตอบ)';
+            qTitle.innerHTML = `<span>📜</span> คำถามข้อที่ ${current} / ${total} • ${typeLabel}`;
+        }
+        if (qText) {
+            qText.innerHTML = formatWithImages(q.question);
+        }
+        if (qImage) {
+            if (q.image_url) {
+                qImage.innerHTML = `<img src="${q.image_url}" onclick="zoomImage('${q.image_url}')" class="max-h-48 rounded-xl border border-white/20 mx-auto cursor-pointer">`;
+            } else {
+                qImage.innerHTML = '';
+            }
+        }
+        if (narrator) {
+            narrator.style.display = 'none';
+            narrator.textContent = '';
+        }
+
+        // 5. Render Move Commands (ช้อยส์คำตอบคือท่าไม้ตาย)
+        renderPokeBattleMoves(q);
+
+        // Reset attack button state
+        const attackBtn = document.getElementById('pokeAttackBtn');
+        const attackBtnText = document.getElementById('pokeAttackBtnText');
+        if (attackBtn) attackBtn.disabled = true;
+        if (attackBtnText) {
+            attackBtnText.textContent = (currentQuestionIndex === questions.length - 1)
+                ? 'ปล่อยพลังปิดฉาก! (ส่งข้อสอบ)'
+                : 'ปล่อยพลังโจมตี! (ยืนยันคำตอบ)';
+        }
+
+        // 6. Update Map Milestones
+        if (pokeMilestones.length !== questions.length) {
+            initPokeMapCanvas();
+        }
+    }
+
+    function renderPokeBattleMoves(q) {
+        const container = document.getElementById('pokeBattleMovesContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        selectedPokemonMoveIndex = null;
+
+        if (q.type === 'writing') {
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1; padding: 0.5rem 0;">
+                    <label class="block text-xs font-black text-amber-300 uppercase tracking-wide mb-1.5">
+                        ✍️ ร่ายคาถาพิมพ์คำตอบ (Writing Spell)
+                    </label>
+                    <textarea
+                        id="pokeWritingInput"
+                        oninput="handlePokeWritingInput(this)"
+                        class="writing-area"
+                        rows="3"
+                        placeholder="พิมพ์คำตอบเพื่อปล่อยพลังโจมตี..."
+                        style="background:#020617; border-color:#38bdf8;"
+                    ></textarea>
+                </div>
+            `;
+            return;
+        }
+
+        // Multiple Choice: Render 4 Moves
+        const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+        q.options.forEach((opt, idx) => {
+            const card = document.createElement('div');
+            card.className = 'poke-move-card';
+            card.id = `pokeMoveCard_${idx}`;
+            card.onclick = () => selectPokeMove(idx);
+
+            card.innerHTML = `
+                <div class="poke-move-letter">${letters[idx] || (idx + 1)}</div>
+                <div class="poke-move-info">
+                    <div class="poke-move-name">${formatWithImages(opt)}</div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function selectPokeMove(idx) {
+        if (isPokeAttacking) return;
+        selectedPokemonMoveIndex = idx;
+        PokeSoundFX.playSelect();
+
+        // Update Pokemon Move Card UI
+        document.querySelectorAll('.poke-move-card').forEach((c, i) => {
+            if (i === idx) c.classList.add('selected');
+            else c.classList.remove('selected');
+        });
+
+        // Sync with Classic view option
+        const classicOpts = document.querySelectorAll('.opt-card');
+        if (classicOpts && classicOpts[idx]) {
+            classicOpts.forEach(c => c.classList.remove('selected'));
+            classicOpts[idx].classList.add('selected');
+            const radio = classicOpts[idx].querySelector('input');
+            if (radio) radio.checked = true;
+        }
+
+        // Enable buttons in both views
+        const attackBtn = document.getElementById('pokeAttackBtn');
+        if (attackBtn) attackBtn.disabled = false;
+        document.getElementById('nextQuestionBtn').disabled = false;
+        document.getElementById('submitExamBtn').disabled = false;
+    }
+
+    function syncPokeMoveSelection(idx) {
+        selectedPokemonMoveIndex = idx;
+        document.querySelectorAll('.poke-move-card').forEach((c, i) => {
+            if (i === idx) c.classList.add('selected');
+            else c.classList.remove('selected');
+        });
+        const attackBtn = document.getElementById('pokeAttackBtn');
+        if (attackBtn) attackBtn.disabled = false;
+    }
+
+    function handlePokeWritingInput(el) {
+        const val = el.value.trim();
+        const has = val.length > 0;
+        const attackBtn = document.getElementById('pokeAttackBtn');
+        if (attackBtn) attackBtn.disabled = !has;
+
+        // Sync with classic textarea
+        const classicTextarea = document.getElementById('writing-input');
+        if (classicTextarea) {
+            classicTextarea.value = el.value;
+            checkWritingInput(classicTextarea);
+        }
+    }
+
+    function syncPokeWritingInput(val) {
+        const pokeInput = document.getElementById('pokeWritingInput');
+        if (pokeInput) {
+            pokeInput.value = val;
+            const has = val.trim().length > 0;
+            const attackBtn = document.getElementById('pokeAttackBtn');
+            if (attackBtn) attackBtn.disabled = !has;
+        }
+    }
+
+    // Execute Battle Attack Animation & Submit Step
+    function executePokemonAttack() {
+        if (isPokeAttacking) return;
+        isPokeAttacking = true;
+
+        const playerSprite = document.getElementById('pokePlayerSprite');
+        const enemySprite = document.getElementById('pokeEnemySprite');
+        const battleField = document.getElementById('pokeBattleField');
+        const enemyHpFill = document.getElementById('pokeEnemyHpFill');
+        const attackBtn = document.getElementById('pokeAttackBtn');
+        const narrator = document.getElementById('pokeBattleNarrator');
+        const skillEffect = document.getElementById('pokeSkillEffect');
+
+        if (attackBtn) attackBtn.disabled = true;
+
+        // Randomize skill and move name for cinematic battle
+        let skillClass = 'skill-thunder';
+        let skillThaiName = 'สายฟ้าฟาด (Thunderbolt)';
+        const randomSkill = Math.floor(Math.random() * 4);
+        if (randomSkill === 1) {
+            skillClass = 'skill-iron-tail';
+            skillThaiName = 'หางเหล็กกล้า (Iron Tail)';
+        } else if (randomSkill === 2) {
+            skillClass = 'skill-electro-ball';
+            skillThaiName = 'บอลประจุไฟฟ้า (Electro Ball)';
+        } else if (randomSkill === 3) {
+            skillClass = 'skill-quick-attack';
+            skillThaiName = 'พุ่งจู่โจมไว (Quick Attack)';
+        }
+
+        // Step 1: Pikachu Charges Forward smoothly!
+        if (playerSprite) playerSprite.classList.add('player-attack-anim');
+        PokeSoundFX.playAttack();
+
+        // Step 2: Impact at 450ms (Peak of Pikachu's lunge)
+        setTimeout(() => {
+            if (skillEffect) {
+                skillEffect.className = 'poke-skill-effect';
+                void skillEffect.offsetWidth; // trigger reflow
+                skillEffect.classList.add(skillClass);
+            }
+            if (battleField) battleField.classList.add('screen-shake');
+            if (enemySprite) enemySprite.classList.add('enemy-hit-anim');
+            PokeSoundFX.playHit();
+
+            // Enemy HP drops smoothly
+            if (enemyHpFill) {
+                enemyHpFill.style.width = '0%';
+                enemyHpFill.style.backgroundColor = '#ef4444';
+            }
+
+            // Narrator announcement
+            if (narrator) {
+                narrator.style.display = 'block';
+                narrator.textContent = `⚡ ปิกาจูใช้ท่า "${skillThaiName}" โจมตีเข้าจุดสำคัญ พิชิตข้อสอบสำเร็จ!`;
+            }
+        }, 450);
+
+        // Step 3: Enemy defeated, victory sound, then RETURN TO MAP
+        // 1350ms gives full 900ms for the 0.85s skill VFX to bloom and fade smoothly
+        setTimeout(() => {
+            if (battleField) battleField.classList.remove('screen-shake');
+            if (playerSprite) playerSprite.classList.remove('player-attack-anim');
+            if (enemySprite) {
+                enemySprite.classList.remove('enemy-hit-anim');
+                enemySprite.classList.add('enemy-fainted');
+            }
+
+            PokeSoundFX.playVictory();
+
+            // Collect answer
+            collectAnswer();
+
+            // Mark question as answered
+            if (!answeredQuestions.includes(currentQuestionIndex)) {
+                answeredQuestions.push(currentQuestionIndex);
+            }
+
+            // Return to map or finish (1050ms later for smooth victory sensation)
+            setTimeout(() => {
+                isPokeAttacking = false;
+
+                if (answeredQuestions.length < questions.length) {
+                    // === RETURN TO MAP: let student walk to next Pokémon ===
+                    switchPokemonSubStage('map');
+                    drawPokeMap();
+                    startQuestionTimer(20, true);
+                } else {
+                    finishExam();
+                }
+            }, 850);
+        }, 700);
+    }
+
+    // Explicitly bind all functions to window for inline onclick handlers
+    window.toggleSoundFx = toggleSoundFx;
+    window.toggleExamViewMode = toggleExamViewMode;
+    window.switchPokemonSubStage = switchPokemonSubStage;
+    window.startPokemonBattleEncounter = startPokemonBattleEncounter;
+    window.pokeMapWalk = pokeMapWalk;
+    window.pokeMapInteract = pokeMapInteract;
+    window.selectPokeMove = selectPokeMove;
+    window.handlePokeWritingInput = handlePokeWritingInput;
+    window.executePokemonAttack = executePokemonAttack;
   </script>
 </body>
 </html>

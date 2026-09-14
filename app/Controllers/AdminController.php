@@ -52,6 +52,9 @@ class AdminController extends BaseController
             if (!$db->fieldExists('max_strikes', 'exams')) {
                 $db->query("ALTER TABLE exams ADD COLUMN max_strikes INT DEFAULT 3 COMMENT 'จำนวนครั้งสลับหน้าจอสูงสุดที่อนุญาตให้ทำได้ก่อนระงับสอบ' AFTER anti_cheating");
             }
+            if (!$db->fieldExists('exam_mode', 'exams')) {
+                $db->query("ALTER TABLE exams ADD COLUMN exam_mode VARCHAR(50) DEFAULT 'classic' COMMENT 'รูปแบบการสอบ: classic = ข้อสอบมาตรฐาน, pokemon = เดินเล่นเกมแนวโปเกมอน' AFTER exam_round");
+            }
             if (!$db->fieldExists('exam_id', 'error_logs')) {
                 $db->query("ALTER TABLE error_logs ADD COLUMN exam_id VARCHAR(36) NULL COMMENT 'รหัสการสอบที่เกิดเหตุการณ์' AFTER id");
             }
@@ -563,7 +566,8 @@ class AdminController extends BaseController
                 'anti_cheating' => $antiCheating,
                 'max_strikes' => $maxStrikes,
                 'num_questions' => $numQuestions,
-                'exam_round' => $examRound
+                'exam_round' => $examRound,
+                'exam_mode' => $this->request->getPost('exam_mode') ?: 'classic'
             ];
 
             if ($examStatus === 'Started') {
@@ -649,6 +653,30 @@ class AdminController extends BaseController
 
             $examModel->update($id, ['join_policy' => $policy]);
             return $this->respond(['success' => true, 'message' => 'ปรับปรุงนโยบายการเข้าร่วมสอบแล้ว']);
+        } catch (\Exception $e) {
+            return $this->respond(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function updateExamMode()
+    {
+        try {
+            $this->checkAuth();
+            $id = $this->request->getPost('id');
+            $mode = $this->request->getPost('exam_mode');
+
+            if (empty($id) || empty($mode)) {
+                return $this->respond(['success' => false, 'message' => 'Missing parameters'], 400);
+            }
+
+            $examModel = new \App\Models\ExamModel();
+            $exam = $examModel->find($id);
+            if (!$exam) {
+                return $this->respond(['success' => false, 'message' => 'ไม่พบวิชาสอบนี้'], 404);
+            }
+
+            $examModel->update($id, ['exam_mode' => $mode]);
+            return $this->respond(['success' => true, 'message' => 'ปรับปรุงรูปแบบการสอบเรียบร้อยแล้ว']);
         } catch (\Exception $e) {
             return $this->respond(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -743,7 +771,8 @@ class AdminController extends BaseController
                 'anti_cheating'      => isset($sourceExam['anti_cheating']) ? (int)$sourceExam['anti_cheating'] : 1,
                 'max_strikes'        => isset($sourceExam['max_strikes']) ? (int)$sourceExam['max_strikes'] : 3,
                 'num_questions'      => (int)($sourceExam['num_questions'] ?? 20),
-                'exam_round'         => $examRound ?: '1'
+                'exam_round'         => $examRound ?: '1',
+                'exam_mode'          => $sourceExam['exam_mode'] ?? 'classic'
             ];
 
             $examModel->insert($data);
@@ -1356,12 +1385,14 @@ class AdminController extends BaseController
 
             $joinPolicy = 'anytime';
             $examStatus = 'Waiting';
+            $examMode = 'classic';
             if ($examId) {
                 $examModel = new \App\Models\ExamModel();
                 $exam = $examModel->find($examId);
                 if ($exam) {
                     $examStatus = $exam['exam_status'];
                     $joinPolicy = $exam['join_policy'] ?? 'anytime';
+                    $examMode = $exam['exam_mode'] ?? 'classic';
                 }
             }
                                      
@@ -1377,7 +1408,8 @@ class AdminController extends BaseController
                 'students' => $students,
                 'exam_status' => $examStatus,
                 'lobby_mode' => $lobbyMode,
-                'join_policy' => $joinPolicy
+                'join_policy' => $joinPolicy,
+                'exam_mode' => $examMode
             ]);
         } catch (\Exception $e) {
             return $this->respond(['success' => false, 'message' => $e->getMessage()], $e->getCode() ?: 500);

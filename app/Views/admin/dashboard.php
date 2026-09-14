@@ -536,6 +536,37 @@
                 </div>
               </div>
 
+              <!-- Card 2: Exam Mode Selection (รูปแบบการสอบ) -->
+              <div class="glass-panel rounded-3xl p-6 border border-white/5 space-y-6">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="text-base font-black text-white flex items-center gap-2">🎮 รูปแบบการสอบ (Exam Mode)</h3>
+                    <p class="text-xs text-slate-400 mt-1">กำหนดรูปแบบระบบสอบที่นักเรียนจะได้ทำ</p>
+                  </div>
+                  <span id="monitor-mode-badge" class="px-3 py-1 text-xs font-black rounded-xl"></span>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                  <button id="btn-mode-classic" onclick="changeExamModeDirect('classic')"
+                    class="w-full py-3.5 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer">
+                    <div class="flex items-center justify-between">
+                      <span class="font-extrabold text-white text-sm flex items-center gap-2">📝 แบบมาตรฐาน (Classic Mode)</span>
+                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 font-semibold">มาตรฐาน</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-medium font-sans">หน้าทำข้อสอบแบบมาตรฐาน เรียบง่าย สบายตา ชัดเจน</span>
+                  </button>
+
+                  <button id="btn-mode-pokemon" onclick="changeExamModeDirect('pokemon')"
+                    class="w-full py-3.5 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer">
+                    <div class="flex items-center justify-between">
+                      <span class="font-extrabold text-white text-sm flex items-center gap-2">⚡ ผจญภัย Pokémon RPG</span>
+                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/40 font-semibold">Gamified</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-medium font-sans">เดินผจญภัยบนแผนที่ RPG สไตล์โปเกมอน ตอบคำถามประลอง</span>
+                  </button>
+                </div>
+              </div>
+
               <!-- Card 3: Join Policy Selection -->
               <div class="glass-panel rounded-3xl p-6 border border-white/5 space-y-6">
                 <div>
@@ -806,6 +837,30 @@
                 </div>
               </div>
 
+              <!-- รูปแบบการสอบ (Exam Mode) -->
+              <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-sky-500/10 border border-amber-500/30">
+                <label class="block text-xs font-black text-amber-300 uppercase tracking-wide mb-2 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5"><span>🎮</span> รูปแบบการสอบ (Exam Mode)</span>
+                  <span class="text-[10px] text-slate-400 font-normal">กำหนดให้ผู้เรียนสอบในรูปแบบนี้</span>
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label class="flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-slate-800/80 cursor-pointer hover:border-sky-400 transition-all">
+                    <input type="radio" name="exam_mode" value="classic" id="workspace-mode-classic" class="accent-sky-500 w-4 h-4 cursor-pointer">
+                    <div>
+                      <div class="text-xs font-bold text-white flex items-center gap-1"><span>📝</span> แบบมาตรฐาน (Classic)</div>
+                      <div class="text-[11px] text-slate-400">ข้อสอบออนไลน์ทั่วไป ตัวเลือกสะอาดตา</div>
+                    </div>
+                  </label>
+                  <label class="flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-slate-800/80 cursor-pointer hover:border-amber-400 transition-all">
+                    <input type="radio" name="exam_mode" value="pokemon" id="workspace-mode-pokemon" class="accent-amber-500 w-4 h-4 cursor-pointer">
+                    <div>
+                      <div class="text-xs font-bold text-amber-300 flex items-center gap-1"><span>⚡</span> เดินเกม Pokémon RPG</div>
+                      <div class="text-[11px] text-slate-400">ผจญภัยบนแผนที่ ประลองคำถามโปเกมอน</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/5">
                 <button type="button" onclick="duplicateCurrentExam()"
                   class="px-5 py-3.5 bg-sky-500/15 hover:bg-sky-500/25 text-sky-400 hover:text-sky-300 font-bold rounded-xl text-xs sm:text-sm border border-sky-500/30 transition-all flex items-center gap-2 cursor-pointer shadow-sm">
@@ -1071,9 +1126,15 @@
               <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-black rounded-xl ${typeBadgeClass}">
                 <span>${typeIcon}</span> ${escapeHtml(e.exam_type || 'ทั่วไป')}
               </span>
-              <span class="text-[10px] text-slate-300 font-bold bg-white/5 border border-white/10 px-2 py-0.5 rounded-lg">
-                เทอม ${escapeHtml(e.semester || '-')}/${escapeHtml(e.academic_year || '-')}
-              </span>
+              <div class="flex items-center gap-1.5 flex-wrap justify-end">
+                ${e.exam_mode === 'pokemon' 
+                  ? `<span class="px-2 py-0.5 text-[10px] font-black rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm flex items-center gap-1" title="รูปแบบการสอบ: เดินเล่นเกม Pokémon RPG"><span>⚡</span> Pokémon</span>` 
+                  : `<span class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-slate-700/60 text-slate-300 border border-white/5" title="รูปแบบการสอบ: ข้อสอบมาตรฐาน"><span>📝</span> ปกติ</span>`
+                }
+                <span class="text-[10px] text-slate-300 font-bold bg-white/5 border border-white/10 px-2 py-0.5 rounded-lg">
+                  เทอม ${escapeHtml(e.semester || '-')}/${escapeHtml(e.academic_year || '-')}
+                </span>
+              </div>
             </div>
 
             <h3 class="text-lg font-black text-white mb-2 truncate group-hover:text-pink-400 transition-colors" title="${escapeHtml(e.subject_name || '')}">
@@ -1385,7 +1446,8 @@
         exam_duration: '0',
         exam_round: '1',
         anti_cheating: '1',
-        max_strikes: '3'
+        max_strikes: '3',
+        exam_mode: 'classic'
       }, '🏫 เพิ่มรายวิชาสอบใหม่');
     }
 
@@ -1528,6 +1590,18 @@
               </div>
             </div>
 
+            <!-- Exam Mode (รูปแบบการสอบ) -->
+            <div>
+              <label class="block text-xs font-extrabold text-slate-200 mb-1.5 flex items-center gap-1">
+                <span class="text-amber-400">🎮</span> รูปแบบการสอบ (Exam Mode)
+              </label>
+              <select id="swal-dup-mode" 
+                class="w-full bg-slate-800 border-2 border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 rounded-xl px-3.5 py-2.5 text-sm text-white font-black outline-none transition-all cursor-pointer">
+                <option value="classic" ${(!e.exam_mode || e.exam_mode === 'classic') ? 'selected' : ''}>📝 แบบมาตรฐาน (Classic Mode)</option>
+                <option value="pokemon" ${e.exam_mode === 'pokemon' ? 'selected' : ''}>⚡ เดินเกม Pokémon RPG (Gamified Mode)</option>
+              </select>
+            </div>
+
             <!-- Copy Questions Option (Card) -->
             <div class="p-4 bg-gradient-to-br from-sky-950/70 via-slate-850 to-slate-900 border-2 border-sky-500/50 rounded-2xl shadow-lg shadow-sky-950/30">
               <label class="flex items-start gap-3 cursor-pointer select-none">
@@ -1576,13 +1650,14 @@
           const semester = document.getElementById('swal-dup-semester').value.trim();
           const type = document.getElementById('swal-dup-type').value;
           const round = document.getElementById('swal-dup-round').value.trim() || '1';
+          const mode = document.getElementById('swal-dup-mode')?.value || 'classic';
           const copyQ = document.getElementById('swal-dup-copy-q').checked;
 
           if (!name || !code || !year || !semester) {
             Swal.showValidationMessage('กรุณากรอกชื่อวิชา, รหัสวิชา, ปีการศึกษา และภาคเรียนให้ครบถ้วน');
             return false;
           }
-          return { name, code, year, semester, type, round, copyQ };
+          return { name, code, year, semester, type, round, mode, copyQ };
         }
       }).then(async (res) => {
         if (!res.isConfirmed || !res.value) return;
@@ -1609,6 +1684,7 @@
           fd.append('semester', res.value.semester);
           fd.append('exam_type', res.value.type);
           fd.append('exam_round', res.value.round);
+          fd.append('exam_mode', res.value.mode);
           fd.append('copy_questions', res.value.copyQ ? 'true' : 'false');
 
           const response = await fetch('/api/teacher/exams/duplicate', {
@@ -1787,6 +1863,30 @@
               <input type="number" id="swal-e-maxstrikes" value="${eData.max_strikes !== undefined && eData.max_strikes !== null ? eData.max_strikes : '3'}" min="1" max="10" class="w-full bg-slate-800 border border-white/10 rounded-xl p-3 text-white outline-none" required>
             </div>
           </div>
+
+          <!-- รูปแบบการสอบ (Exam Mode) -->
+          <div class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-sky-500/10 border border-amber-500/30">
+            <label class="block text-xs font-black text-amber-300 uppercase tracking-wide mb-2 flex items-center justify-between">
+              <span class="flex items-center gap-1.5"><span>🎮</span> รูปแบบการสอบ (Exam Mode)</span>
+              <span class="text-[10px] text-slate-400 font-normal">กำหนดให้ผู้เรียนสอบในรูปแบบนี้</span>
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-white/10 bg-slate-800/90 cursor-pointer hover:border-sky-400 transition-all">
+                <input type="radio" name="swal-e-mode" value="classic" ${(!eData.exam_mode || eData.exam_mode === 'classic') ? 'checked' : ''} class="accent-sky-500 w-4 h-4 cursor-pointer">
+                <div>
+                  <div class="text-xs font-bold text-white flex items-center gap-1"><span>📝</span> แบบมาตรฐาน</div>
+                  <div class="text-[10px] text-slate-400">ข้อสอบทั่วไป ตัวเลือกเรียบง่าย</div>
+                </div>
+              </label>
+              <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-white/10 bg-slate-800/90 cursor-pointer hover:border-amber-400 transition-all">
+                <input type="radio" name="swal-e-mode" value="pokemon" ${eData.exam_mode === 'pokemon' ? 'checked' : ''} class="accent-amber-500 w-4 h-4 cursor-pointer">
+                <div>
+                  <div class="text-xs font-bold text-amber-300 flex items-center gap-1"><span>⚡</span> Pokémon RPG</div>
+                  <div class="text-[10px] text-slate-400">เดินแผนที่ สู้โปเกมอน</div>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
       `;
 
@@ -1825,13 +1925,15 @@
           const duration = popup.querySelector('#swal-e-duration').value;
           const anticheat = popup.querySelector('#swal-e-anticheat').value;
           const maxstrikes = popup.querySelector('#swal-e-maxstrikes').value;
+          const modeRadio = popup.querySelector('input[name="swal-e-mode"]:checked');
+          const mode = modeRadio ? modeRadio.value : 'classic';
 
           if (!code || !name || !year || !semester || !teacher || !round) {
             Swal.showValidationMessage('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
             return false;
           }
 
-          return { id, code, name, year, semester, area, teacher, type, status, round, num, attempts, pass, time_c, time_w, duration, anticheat, maxstrikes };
+          return { id, code, name, year, semester, area, teacher, type, status, round, num, attempts, pass, time_c, time_w, duration, anticheat, maxstrikes, mode };
         }
       }).then(async (result) => {
         if (result.isConfirmed) {
@@ -1855,6 +1957,7 @@
           formData.append('exam_duration', data.duration);
           formData.append('anti_cheating', data.anticheat);
           formData.append('max_strikes', data.maxstrikes);
+          formData.append('exam_mode', data.mode);
 
           Swal.fire({ title: 'กำลังบันทึกรายวิชา...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
@@ -1923,6 +2026,15 @@
       document.getElementById('workspace-e-round').value = exam.exam_round || '1';
       document.getElementById('workspace-e-anticheat').value = exam.anti_cheating !== undefined ? String(exam.anti_cheating) : '1';
       document.getElementById('workspace-e-maxstrikes').value = exam.max_strikes !== undefined && exam.max_strikes !== null ? exam.max_strikes : '3';
+      
+      const currentMode = exam.exam_mode || 'classic';
+      if (currentMode === 'pokemon') {
+        const pokeRadio = document.getElementById('workspace-mode-pokemon');
+        if (pokeRadio) pokeRadio.checked = true;
+      } else {
+        const classicRadio = document.getElementById('workspace-mode-classic');
+        if (classicRadio) classicRadio.checked = true;
+      }
     }
 
     const activeExamSettingsFormEl = document.getElementById('activeExamSettingsForm');
@@ -2632,6 +2744,10 @@
           updateJoinPolicyUI(res.join_policy);
         }
 
+        if (res.exam_mode) {
+          updateExamModeUI(res.exam_mode);
+        }
+
         if (badgeEl && res.exam_status) {
           if (res.exam_status === 'Waiting') {
             badgeEl.className = "px-3.5 py-1.5 text-xs font-black rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm";
@@ -2767,6 +2883,63 @@
       } else {
         btnAnytime.className = "w-full py-3.5 px-5 bg-gradient-to-r from-sky-500 to-blue-500 text-white font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-sky-500/20 shadow-lg shadow-sky-500/10 scale-[1.01]";
         btnLobby.className = "w-full py-3.5 px-5 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer opacity-50 hover:opacity-90";
+      }
+    }
+
+    async function changeExamModeDirect(mode) {
+      const formData = new FormData();
+      formData.append('id', activeExamId);
+      formData.append('exam_mode', mode);
+
+      try {
+        const response = await fetch('/api/teacher/exams/update-mode', {
+          method: 'POST',
+          body: formData
+        });
+        const res = await response.json();
+        if (res.success) {
+          updateExamModeUI(mode);
+          Swal.fire({
+            icon: 'success',
+            title: 'เปลี่ยนรูปแบบการสอบสำเร็จ!',
+            text: mode === 'pokemon' 
+              ? 'ปรับเป็นโหมดเดินเล่นเกม Pokémon RPG Adventure แล้ว' 
+              : 'ปรับเป็นโหมดข้อสอบมาตรฐาน (Classic) แล้ว',
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } else {
+          Swal.fire('ล้มเหลว', res.message || 'บันทึกไม่สำเร็จ', 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        Swal.fire('ล้มเหลว', 'การเชื่อมต่อผิดพลาด', 'error');
+      }
+    }
+
+    function updateExamModeUI(mode) {
+      const btnClassic = document.getElementById('btn-mode-classic');
+      const btnPokemon = document.getElementById('btn-mode-pokemon');
+      const badge = document.getElementById('monitor-mode-badge');
+
+      if (badge) {
+        if (mode === 'pokemon') {
+          badge.className = "px-3 py-1 text-xs font-black rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm";
+          badge.innerHTML = "⚡ Pokémon RPG";
+        } else {
+          badge.className = "px-3 py-1 text-xs font-black rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm";
+          badge.innerHTML = "📝 แบบปกติ";
+        }
+      }
+
+      if (!btnClassic || !btnPokemon) return;
+
+      if (mode === 'pokemon') {
+        btnPokemon.className = "w-full py-3.5 px-4 bg-gradient-to-r from-amber-500/30 via-red-500/25 to-purple-500/30 text-amber-200 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-amber-500/50 shadow-lg shadow-amber-500/20 scale-[1.01]";
+        btnClassic.className = "w-full py-3.5 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer opacity-50 hover:opacity-90";
+      } else {
+        btnClassic.className = "w-full py-3.5 px-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-sky-500/30 shadow-lg shadow-sky-500/20 scale-[1.01]";
+        btnPokemon.className = "w-full py-3.5 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer opacity-50 hover:opacity-90";
       }
     }
 

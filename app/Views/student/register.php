@@ -488,7 +488,8 @@
               data-learning-area="<?= esc($exam['learning_area']) ?>"
               data-exam-type="<?= esc($examTypeStr) ?>"
               data-academic-year="<?= esc(trim($exam['academic_year'] ?? '')) ?>"
-              data-semester-info="<?= esc($semesterText) ?>">
+              data-semester-info="<?= esc($semesterText) ?>"
+              data-exam-mode="<?= esc($exam['exam_mode'] ?? 'classic') ?>">
 
               <div>
                 <!-- Top Badges: Learning Area & Status -->
@@ -518,16 +519,21 @@
                 </div>
 
                 <!-- Highly Prominent Exam Type Banner with Semester Info -->
-                <div class="flex items-center justify-between gap-2 mb-3">
+                <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
                   <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black tracking-wide <?= $badgeClass ?> animate-pulse-subtle">
                     <span class="text-sm"><?= $badgeIcon ?></span>
                     <span><?= esc($examTypeStr) ?></span>
                   </span>
-                  <?php if ($semesterText !== ''): ?>
-                    <span class="text-[11px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg">
-                      <?= $semesterText ?>
-                    </span>
-                  <?php endif; ?>
+                  <div class="flex items-center gap-1.5">
+                    <?php if (($exam['exam_mode'] ?? 'classic') === 'pokemon'): ?>
+                      <span class="text-[10px] font-black text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-lg shadow-sm">⚡ Pokémon RPG</span>
+                    <?php endif; ?>
+                    <?php if ($semesterText !== ''): ?>
+                      <span class="text-[11px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg">
+                        <?= $semesterText ?>
+                      </span>
+                    <?php endif; ?>
+                  </div>
                 </div>
 
                 <!-- Subject Info -->
@@ -569,7 +575,7 @@
                 <?php else: ?>
                   <div class="flex gap-2">
                     <button
-                      onclick="openRegisterModal('<?= esc($exam['id']) ?>', '<?= esc(addslashes($exam['subject_name'])) ?>', '<?= esc(addslashes($exam['teacher_name'])) ?>', '<?= esc(addslashes($examTypeStr)) ?>', '<?= esc(addslashes($semesterText)) ?>')"
+                      onclick="openRegisterModal('<?= esc($exam['id']) ?>', '<?= esc(addslashes($exam['subject_name'])) ?>', '<?= esc(addslashes($exam['teacher_name'])) ?>', '<?= esc(addslashes($examTypeStr)) ?>', '<?= esc(addslashes($semesterText)) ?>', '<?= esc($exam['exam_mode'] ?? 'classic') ?>')"
                       class="flex-1 py-3.5 btn-pink-blue font-extrabold rounded-2xl text-sm flex items-center justify-center gap-2">
                       เข้าห้องสอบ 🚀
                     </button>
@@ -713,8 +719,11 @@
             required>
         </div>
 
+        <!-- Exam Mode Display (กำหนดโดยครูผู้สอน) -->
+        <div id="modalExamModeContainer" class="pt-2"></div>
+
         <button type="submit"
-          class="w-full py-4 btn-pink-blue font-extrabold rounded-2xl text-base shadow-lg mt-6 flex items-center justify-center gap-2">
+          class="w-full py-4 btn-pink-blue font-extrabold rounded-2xl text-base shadow-lg mt-6 flex items-center justify-center gap-2 cursor-pointer">
           ยืนยันลงชื่อเข้าสอบ 🚀
         </button>
       </form>
@@ -755,7 +764,8 @@
           const teacherName = foundCard.getAttribute('data-teacher-name');
           const examType = foundCard.getAttribute('data-exam-type');
           const semesterInfo = foundCard.getAttribute('data-semester-info');
-          openRegisterModal(examId, subName, teacherName, examType, semesterInfo);
+          const examMode = foundCard.getAttribute('data-exam-mode') || 'classic';
+          openRegisterModal(examId, subName, teacherName, examType, semesterInfo, examMode);
         }
       }
     };
@@ -917,11 +927,47 @@
       }
     }
 
+    let currentModalExamMode = 'classic';
+
     // Modal control
-    function openRegisterModal(examId, subjectName, teacherName, examType, semesterInfo) {
+    function openRegisterModal(examId, subjectName, teacherName, examType, semesterInfo, examMode) {
       document.getElementById('examIdField').value = examId;
       document.getElementById('modalSubjectTitle').textContent = subjectName;
       document.getElementById('modalTeacherName').textContent = `ครูผู้สอน: ${teacherName}`;
+
+      currentModalExamMode = examMode || 'classic';
+      const modeContainer = document.getElementById('modalExamModeContainer');
+      if (modeContainer) {
+        if (currentModalExamMode === 'pokemon') {
+          modeContainer.innerHTML = `
+            <div class="p-3.5 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-red-500/10 to-purple-500/15 flex items-center justify-between shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+              <div class="flex items-center gap-3">
+                <span class="text-3xl animate-bounce">⚡</span>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-black text-amber-300">โหมดการสอบ: Pokémon RPG Adventure</span>
+                    <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-200 border border-amber-500/40">กำหนดโดยครู</span>
+                  </div>
+                  <p class="text-[11px] text-slate-300 mt-0.5">เดินเล่นผจญภัยในแผนที่ RPG และตอบคำถามประลองโปเกมอน</p>
+                </div>
+              </div>
+            </div>`;
+        } else {
+          modeContainer.innerHTML = `
+            <div class="p-3.5 rounded-2xl border border-sky-500/30 bg-sky-500/10 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="text-3xl">📝</span>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-black text-sky-300">โหมดการสอบ: แบบมาตรฐาน (Classic)</span>
+                    <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">กำหนดโดยครู</span>
+                  </div>
+                  <p class="text-[11px] text-slate-300 mt-0.5">ทำข้อสอบมาตรฐาน เรียบง่าย สบายตา ชัดเจน</p>
+                </div>
+              </div>
+            </div>`;
+        }
+      }
 
       const badgeEl = document.getElementById('modalExamTypeBadge');
       if (badgeEl) {
@@ -991,6 +1037,9 @@
         Swal.close();
 
         if (res.success) {
+          // Save teacher-assigned exam mode
+          localStorage.setItem('skj_exam_mode', currentModalExamMode || 'classic');
+
           if (res.exam_status === 'Started' && res.join_policy === 'anytime') {
             window.location.href = '/exam';
           } else {

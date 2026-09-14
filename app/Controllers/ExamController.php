@@ -69,6 +69,7 @@ class ExamController extends BaseController
             'examStatus' => $exam['exam_status'],
             'maxAttempts' => (int) $exam['max_attempts'],
             'examId' => $examId,
+            'examMode' => $exam['exam_mode'] ?? 'classic',
         ];
 
         return view('student/lobby', $data);
@@ -140,6 +141,7 @@ class ExamController extends BaseController
             'examDurationSeconds' => $remainingSeconds,
             'antiCheating' => isset($exam['anti_cheating']) ? (int) $exam['anti_cheating'] : 1,
             'examId' => $examId,
+            'examMode' => $exam['exam_mode'] ?? 'classic',
         ];
 
         return view('student/exam', $data);

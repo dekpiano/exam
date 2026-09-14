@@ -199,6 +199,22 @@
             <div id="mobileWaitingTime" class="waiting-duration">รอมาแล้ว: 0 นาที 0 วินาที</div>
           </div>
 
+          <!-- Selected Exam Mode in Lobby (กำหนดโดยครูผู้สอน) -->
+          <div class="w-full bg-slate-900/80 border border-white/10 rounded-2xl p-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 text-left">
+              <span id="lobbyModeIcon" class="text-2xl"><?= ($examMode ?? 'classic') === 'pokemon' ? '⚡' : '📝' ?></span>
+              <div>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase">รูปแบบการสอบ (กำหนดโดยครู)</span>
+                <span id="lobbyModeName" class="text-xs font-black <?= ($examMode ?? 'classic') === 'pokemon' ? 'text-amber-300' : 'text-sky-400' ?>">
+                  <?= ($examMode ?? 'classic') === 'pokemon' ? '🎮 เดินเล่นเกม Pokémon RPG' : '📝 โหมดข้อสอบมาตรฐาน (Classic)' ?>
+                </span>
+              </div>
+            </div>
+            <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full <?= ($examMode ?? 'classic') === 'pokemon' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-sky-500/20 text-sky-300 border border-sky-500/30' ?>">
+              ครูกำหนด
+            </span>
+          </div>
+
           <div class="w-full">
             <div id="statusLabel" class="w-full py-3 bg-pink-500/10 border border-pink-500/25 rounded-2xl text-pink-400 font-extrabold text-sm transition-all duration-300 flex items-center justify-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-pink-500 animate-ping"></span>
@@ -273,6 +289,8 @@
     var pollingActive = true;
 
     window.onload = () => {
+        updateLobbyExamModeUI();
+
         // Start local clock
         clockInterval = setInterval(updateClock, 1000);
         updateClock();
@@ -285,6 +303,25 @@
         checkExamStatus();
         statusInterval = setInterval(checkExamStatus, 4000);
     };
+
+    const teacherExamMode = "<?= esc($examMode ?? 'classic') ?>";
+
+    function updateLobbyExamModeUI() {
+        localStorage.setItem('skj_exam_mode', teacherExamMode);
+        const iconEl = document.getElementById('lobbyModeIcon');
+        const nameEl = document.getElementById('lobbyModeName');
+        if (iconEl && nameEl) {
+            if (teacherExamMode === 'pokemon') {
+                iconEl.textContent = '⚡';
+                nameEl.textContent = '🎮 เดินเล่นเกม Pokémon RPG';
+                nameEl.className = 'text-xs font-black text-amber-300';
+            } else {
+                iconEl.textContent = '📝';
+                nameEl.textContent = 'โหมดข้อสอบมาตรฐาน (Classic)';
+                nameEl.className = 'text-xs font-black text-sky-400';
+            }
+        }
+    }
 
     function updateClock() {
         const now = new Date();
