@@ -58,6 +58,9 @@ class AdminController extends BaseController
             if (!$db->fieldExists('exam_id', 'error_logs')) {
                 $db->query("ALTER TABLE error_logs ADD COLUMN exam_id VARCHAR(36) NULL COMMENT 'รหัสการสอบที่เกิดเหตุการณ์' AFTER id");
             }
+            // Ensure points in questions and scores in exam_results support decimals (FLOAT)
+            $db->query("ALTER TABLE questions MODIFY COLUMN points FLOAT NOT NULL DEFAULT 1");
+            $db->query("ALTER TABLE exam_results MODIFY COLUMN score FLOAT DEFAULT 0, MODIFY COLUMN total_questions FLOAT DEFAULT 0");
         } catch (\Exception $e) {
             // Log or ignore schema check error
         }
@@ -261,6 +264,31 @@ class AdminController extends BaseController
             'examType'    => $settings['Exam Type'] ?? 'ข้อสอบกลางภาค',
             'activeExamId' => $examId,
             'currentTab'   => 'exam-settings',
+            'isInWorkspace' => true,
+        ];
+
+        return view('admin/dashboard', $data);
+    }
+
+    public function manual()
+    {
+        if (!$this->session->get('admin_logged_in')) {
+            return redirect()->to('/teacher');
+        }
+
+        $examId = $this->request->getGet('exam_id') ?: '';
+        $settingModel = new SettingModel();
+        $settings = $settingModel->getSettings();
+
+        $data = [
+            'websiteName' => $settings['Website Name'] ?? 'ระบบข้อสอบออนไลน์',
+            'logoUrl'     => $settings['Logo URL'] ?? '',
+            'teacherName' => $this->session->get('teacher_name') ?? ($settings['Teacher Name'] ?? 'ผู้ดูแลระบบ'),
+            'teacherEmail' => $this->session->get('teacher_email') ?? '',
+            'teacherLearning' => $this->session->get('teacher_learning') ?? '',
+            'examType'    => $settings['Exam Type'] ?? 'ข้อสอบกลางภาค',
+            'activeExamId' => !empty($examId) ? $examId : 'global',
+            'currentTab'   => 'manual',
             'isInWorkspace' => true,
         ];
 
@@ -845,7 +873,8 @@ class AdminController extends BaseController
             $examId = $this->request->getPost('exam_id');
             $questionText = $this->request->getPost('question') ?? '';
             $type = $this->request->getPost('type') ?? 'choice';
-            $points = (int)($this->request->getPost('points') ?? 1);
+            $rawPoints = $this->request->getPost('points');
+            $points = ($rawPoints !== null && $rawPoints !== '' && is_numeric($rawPoints)) ? (float)$rawPoints : 1.0;
             $imageUrl = $this->request->getPost('image_url');
             if (empty($imageUrl)) {
                 $imageUrl = null;
@@ -959,7 +988,7 @@ class AdminController extends BaseController
             $db = \Config\Database::connect();
             $db->query("UPDATE questions SET points = ? WHERE id = ?", [(float)$points, $id]);
 
-            return $this->respond(['success' => true, 'message' => 'อัปเดตคะแนนเรียบร้อย']);
+            return $this->respond(['success' => true, 'message' => 'อัปเดตคะแนนเรียบร้อย', 'points' => (float)$points]);
         } catch (\Exception $e) {
             return $this->respond(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -1002,7 +1031,7 @@ class AdminController extends BaseController
                     );
 
                     $type = (!empty($row[6]) && trim(strtolower($row[6])) === 'writing') ? 'writing' : 'choice';
-                    $points = (!empty($row[7])) ? (int)$row[7] : 1;
+                    $points = (isset($row[7]) && $row[7] !== '' && is_numeric($row[7])) ? (float)$row[7] : 1.0;
 
                     $questionModel->insert([
                         'id'             => $id,
@@ -1053,9 +1082,16 @@ class AdminController extends BaseController
                 return $this->respond(['success' => false, 'message' => 'Invalid data URI format'], 400);
             }
 
-            $uploadDir = ROOTPATH . 'public/uploads/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0775, true);
+            $uploadDirs = array_unique([
+                ROOTPATH . 'public/uploads/',
+                ROOTPATH . 'uploads/',
+                FCPATH . 'uploads/'
+            ]);
+
+            foreach ($uploadDirs as $dir) {
+                if (!is_dir($dir)) {
+                    @mkdir($dir, 0775, true);
+                }
             }
 
             // Force a safe image extension from the detected data-URI type and
@@ -1066,9 +1102,16 @@ class AdminController extends BaseController
                 $baseName = 'image';
             }
             $uniqueFileName = time() . '_' . substr($baseName, 0, 80) . '.' . $type;
-            $filePath = $uploadDir . $uniqueFileName;
 
-            if (file_put_contents($filePath, $data)) {
+            $saved = false;
+            foreach ($uploadDirs as $dir) {
+                $targetPath = $dir . $uniqueFileName;
+                if (@file_put_contents($targetPath, $data) !== false) {
+                    $saved = true;
+                }
+            }
+
+            if ($saved) {
                 $url = '/uploads/' . $uniqueFileName;
                 return $this->respond(['success' => true, 'url' => $url, 'fileName' => $uniqueFileName]);
             }
@@ -1093,6 +1136,61 @@ class AdminController extends BaseController
         } catch (\Exception $e) {
             return $this->respond(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Fallback file serving handler for uploaded images.
+     * Guarantees images in both /public/uploads/ and /uploads/ are served
+     * even when web server URL rewriting directs /uploads requests to index.php.
+     */
+    public function serveUpload($fileName = null)
+    {
+        if (empty($fileName)) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('File not found');
+        }
+
+        // Prevent path traversal
+        $safeName = basename($fileName);
+        if ($safeName !== $fileName || $safeName === '' || $safeName === '.' || $safeName === '..') {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Invalid file name');
+        }
+
+        $searchPaths = array_unique([
+            ROOTPATH . 'public/uploads/' . $safeName,
+            ROOTPATH . 'uploads/' . $safeName,
+            FCPATH . 'uploads/' . $safeName,
+            WRITEPATH . 'uploads/' . $safeName,
+        ]);
+
+        $filePath = null;
+        foreach ($searchPaths as $path) {
+            if (is_file($path)) {
+                $filePath = $path;
+                break;
+            }
+        }
+
+        if (!$filePath) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('File not found: ' . $safeName);
+        }
+
+        $ext = strtolower(pathinfo($safeName, PATHINFO_EXTENSION));
+        $mimeTypes = [
+            'jpg'  => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png'  => 'image/png',
+            'gif'  => 'image/gif',
+            'webp' => 'image/webp',
+            'svg'  => 'image/svg+xml',
+            'ico'  => 'image/x-icon',
+        ];
+        $mime = $mimeTypes[$ext] ?? (function_exists('mime_content_type') ? @mime_content_type($filePath) : 'application/octet-stream') ?: 'application/octet-stream';
+
+        return $this->response
+            ->setHeader('Content-Type', $mime)
+            ->setHeader('Content-Length', (string)filesize($filePath))
+            ->setHeader('Cache-Control', 'public, max-age=31536000')
+            ->setBody(file_get_contents($filePath));
     }
 
     public function getResults()

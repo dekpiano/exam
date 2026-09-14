@@ -446,7 +446,7 @@ class ExamController extends BaseController
                 'question' => $q['question_text'],
                 'options' => $options,
                 'type' => $q['type'],
-                'points' => (int) $q['points'],
+                'points' => (float) $q['points'],
                 'image_url' => $q['image_url'] ?? '',
             ];
         }

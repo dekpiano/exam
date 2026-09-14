@@ -193,11 +193,15 @@
         <p class="text-xs text-slate-400">ระบบจัดการข้อสอบสำหรับครูผู้ควบคุม (Teacher Portal)</p>
       </div>
     </div>
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-3">
       <div class="text-right hidden sm:block">
         <p class="text-sm font-bold text-slate-200"><?= esc($teacherName) ?></p>
         <p class="text-[10px] text-sky-400 font-bold uppercase tracking-wider">ผู้ตรวจสอบระดับโรงเรียน</p>
       </div>
+      <a href="<?= (isset($activeExamId) && $activeExamId !== '' && $activeExamId !== 'global') ? ('/teacher/manual?exam_id=' . esc($activeExamId)) : '/teacher/manual' ?>"
+        class="px-3.5 py-2 bg-gradient-to-r from-sky-500/15 to-purple-500/15 hover:from-sky-500/25 hover:to-purple-500/25 text-sky-300 hover:text-white font-bold rounded-xl text-xs border border-sky-400/30 transition-all flex items-center gap-1.5 shadow-sm">
+        📖 คู่มือการใช้งาน
+      </a>
       <button onclick="logout()"
         class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold rounded-xl text-sm border border-red-500/20 transition-all">
         ออกจากระบบ 🚪
@@ -215,7 +219,7 @@
           <p class="text-xs text-slate-400">เลือกการ์ดวิชาด้านล่างเพื่อเข้าสู่เมนู คลังข้อสอบ ล็อบบี้การสอบ
             หรือดูผลคะแนน</p>
         </div>
-        <div class="flex gap-2 w-full sm:w-auto">
+        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
           <button onclick="openExamModal()"
             class="w-full sm:w-auto px-5 py-3 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-pink-500/20 flex items-center justify-center gap-2">
             ➕ เพิ่มวิชาสอบใหม่
@@ -223,6 +227,10 @@
           <a href="/teacher/settings"
             class="w-full sm:w-auto px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-all border border-white/5 flex items-center justify-center gap-2">
             ⚙️ ตั้งค่าส่วนกลาง
+          </a>
+          <a href="/teacher/manual"
+            class="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-sky-500/20 to-purple-500/20 hover:from-sky-500/30 hover:to-purple-500/30 text-sky-300 font-bold rounded-xl text-xs transition-all border border-sky-400/30 flex items-center justify-center gap-2 shadow-md">
+            📖 คู่มือการใช้งานระบบ
           </a>
         </div>
       </div>
@@ -311,10 +319,18 @@
               class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm text-slate-300 hover:bg-white/5 transition-all flex items-center gap-2">
               ⚙️ ตั้งค่าวิชาสอบ
             </a>
+            <a href="/teacher/manual?exam_id=<?= esc($activeExamId) ?>" id="tab-btn-manual"
+              class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm text-slate-300 hover:bg-white/5 transition-all flex items-center gap-2">
+              📖 คู่มือการใช้งานระบบ
+            </a>
           <?php else: ?>
             <a href="/teacher/settings" id="tab-btn-settings"
               class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm text-slate-300 hover:bg-white/5 transition-all flex items-center gap-2">
               ⚙️ ตั้งค่าระบบส่วนกลาง
+            </a>
+            <a href="/teacher/manual" id="tab-btn-manual"
+              class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm text-slate-300 hover:bg-white/5 transition-all flex items-center gap-2">
+              📖 คู่มือการใช้งานระบบ
             </a>
           <?php endif; ?>
 
@@ -633,6 +649,10 @@
                   class="px-4 py-2.5 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/25 hover:border-transparent font-bold rounded-xl text-xs transition-all duration-200 cursor-pointer flex items-center gap-1.5">
                   🖨️ พิมพ์ประกาศผลสอบ
                 </button>
+                <button onclick="exportResultsCSV()"
+                  class="px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/25 hover:border-transparent font-bold rounded-xl text-xs transition-all duration-200 cursor-pointer flex items-center gap-1.5">
+                  📥 ส่งออกคะแนน (Excel/CSV)
+                </button>
               </div>
             </div>
 
@@ -931,6 +951,699 @@
           </div>
         </div>
 
+        <!-- SECTION 7: USER MANUAL (คู่มือการใช้งานระบบ) -->
+        <div id="section-manual" class="section-content hidden space-y-6">
+          <!-- Manual Header Card -->
+          <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-white/5 relative overflow-hidden shadow-xl">
+            <div class="absolute -right-12 -top-12 w-64 h-64 bg-gradient-to-br from-pink-500/10 via-purple-500/10 to-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+              <div class="space-y-2">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-pink-500/20 to-sky-500/20 border border-pink-500/30 text-xs font-black text-pink-300">
+                  <span>📖</span> คู่มือการใช้งานระบบฉบับสมบูรณ์ (Interactive User Manual)
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-black text-white">ระบบจัดการข้อสอบออนไลน์อัจฉริยะ</h2>
+                <p class="text-xs sm:text-sm text-slate-350 max-w-2xl leading-relaxed">
+                  รวบรวมขั้นตอนการทำงานทุกฟังก์ชันสำหรับคุณครูผู้สอนและผู้ดูแลระบบ ตั้งแต่การสร้างวิชา คลังข้อสอบ การคุมสอบสดแบบเรียลไทม์ การตรวจอัตนัยด้วย AI Gemini ไปจนถึงการออกผลคะแนนและป้องกันการทุจริต
+                </p>
+              </div>
+
+              <div class="flex flex-wrap gap-2.5 shrink-0">
+                <button onclick="printManualDocument()"
+                  class="px-4 py-2.5 bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-400/30 font-bold rounded-xl text-xs transition-all flex items-center gap-2 shadow-sm cursor-pointer">
+                  🖨️ สั่งพิมพ์คู่มือนี้ (Print)
+                </button>
+                <a href="/USER_MANUAL.md" target="_blank"
+                  class="px-4 py-2.5 bg-pink-500/15 hover:bg-pink-500/25 text-pink-300 border border-pink-400/30 font-bold rounded-xl text-xs transition-all flex items-center gap-2 shadow-sm">
+                  📄 ดูไฟล์ Markdown
+                </a>
+              </div>
+            </div>
+
+            <!-- Manual Search & Quick Filter -->
+            <div class="mt-6 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center gap-4">
+              <div class="relative w-full sm:w-80">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 text-xs">🔍</span>
+                <input type="text" id="manualTopicSearch" oninput="filterManualTopics()"
+                  class="w-full pl-9 pr-4 py-2.5 bg-black/40 border border-white/10 rounded-xl text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 transition-colors"
+                  placeholder="ค้นหาหัวข้อในคู่มือ เช่น ข้อสอบ, AI, ทุจริต, Excel...">
+              </div>
+              
+              <!-- Quick Jump Pills -->
+              <div class="flex items-center gap-1.5 flex-wrap overflow-x-auto w-full text-xs">
+                <a href="#manual-sec-exams" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors font-bold whitespace-nowrap">🏫 1. จัดการวิชา</a>
+                <a href="#manual-sec-questions" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors font-bold whitespace-nowrap">📝 2. คลังข้อสอบ</a>
+                <a href="#manual-sec-monitor" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors font-bold whitespace-nowrap">🖥️ 3. คุมสอบสด</a>
+                <a href="#manual-sec-ai-grade" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors font-bold whitespace-nowrap">🤖 4. ตรวจด้วย AI</a>
+                <a href="#manual-sec-export" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors font-bold whitespace-nowrap">📊 5. พิมพ์ & Excel</a>
+                <a href="#manual-sec-anti-cheat" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors font-bold whitespace-nowrap">🚨 6. จับทุจริต</a>
+                <a href="#manual-sec-student" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors font-bold whitespace-nowrap">🎓 7. สำหรับนักเรียน</a>
+                <a href="#manual-sec-faq" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors font-bold whitespace-nowrap">❓ 8. FAQ ถาม-ตอบ</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- MANUAL CONTENT CONTAINER -->
+          <div id="manual-content-container" class="space-y-8">
+
+            <!-- MODULE 1: การจัดการรายวิชาสอบ -->
+            <div class="manual-card glass-panel rounded-3xl p-6 sm:p-7 border border-white/5 space-y-5" id="manual-sec-exams" data-keywords="วิชา สร้างวิชา รอบสอบ กลางภาค ปลายภาค pokemon คัดลอก duplicate exam duration เวลา">
+              <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-lg text-pink-300">
+                    🏫
+                  </div>
+                  <div>
+                    <h3 class="text-base sm:text-lg font-black text-white">1. การจัดการรายวิชาสอบ (Exam & Subject Management)</h3>
+                    <p class="text-xs text-slate-400">สร้างรายวิชา กำหนดกติกาการสอบ รอบสอบ และคัดลอกวิชา</p>
+                  </div>
+                </div>
+                <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-pink-500/10 text-pink-400 border border-pink-500/20">ครูผู้สอน / ผู้ดูแล</span>
+              </div>
+
+              <!-- CSS UI MOCKUP 1: Teacher Exam Cards Screen -->
+              <div class="rounded-2xl bg-[#090d16] border border-white/10 p-3 sm:p-4 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block"></span>
+                    <span class="ml-2 text-[10px] text-slate-400 font-mono">🖥️ ตัวอย่างหน้าจอ: แผงควบคุมรายวิชาทั้งหมด (Teacher Exam Lobby)</span>
+                  </div>
+                  <span class="text-[9px] text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded font-mono">UI Preview</span>
+                </div>
+
+                <!-- Mock Filter Bar -->
+                <div class="p-2.5 bg-slate-900/90 rounded-xl border border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div class="flex items-center gap-2 bg-black/40 border border-white/10 px-2.5 py-1 rounded-lg text-slate-400 text-[11px]">
+                    <span>🔍</span> <span>ค้นหาชื่อวิชา รหัสวิชา...</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[11px] font-bold text-slate-400">ปีการศึกษา:</span>
+                    <span class="bg-slate-800 text-pink-300 font-bold px-2 py-0.5 rounded border border-pink-500/30 text-[10px]">2569 (ล่าสุด) ▼</span>
+                    <span class="px-2 py-0.5 rounded bg-white/20 text-white font-bold text-[10px]">🌟 ทั้งหมด (7)</span>
+                    <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/30">🎯 สอบกลางภาค (5)</span>
+                    <span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-200 font-bold text-[10px] border border-purple-500/30">🏁 สอบปลายภาค (2)</span>
+                  </div>
+                </div>
+
+                <!-- Mock Exam Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  <!-- Mock Card 1 -->
+                  <div class="p-3.5 bg-slate-900/80 rounded-2xl border border-amber-500/40 space-y-2 relative overflow-hidden">
+                    <div class="flex justify-between items-center text-xs">
+                      <span class="font-mono font-bold text-pink-400 text-[11px]">ว30291</span>
+                      <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Started (กำลังสอบ)</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-amber-500/25 text-amber-300 border border-amber-400/50">🎯 สอบกลางภาค</span>
+                      <span class="text-[10px] text-slate-400 font-bold">เทอม 1/2569</span>
+                    </div>
+                    <p class="font-black text-white text-sm">การสร้าง Web Application</p>
+                    <div class="text-[11px] text-slate-400 space-y-0.5">
+                      <p>📚 ในคลัง: ปรนัย 20 ข้อ / อัตนัย 2 ข้อ</p>
+                      <p>🕒 สุ่มสอบ 20 ข้อ | เกณฑ์ผ่าน 50% | สิทธิ์สอบ 2 ครั้ง</p>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1.5 pt-2 border-t border-white/5 text-[10px]">
+                      <span class="col-span-2 py-1.5 bg-gradient-to-r from-pink-500 to-sky-400 text-white font-bold rounded-lg text-center">⚙️ จัดการข้อสอบ</span>
+                      <span class="py-1.5 bg-sky-500/10 text-sky-400 border border-sky-500/30 font-bold rounded-lg text-center">📋 โคลน</span>
+                      <span class="py-1.5 bg-white/5 text-slate-300 border border-white/10 font-bold rounded-lg text-center">✏️ แก้ไข</span>
+                    </div>
+                  </div>
+
+                  <!-- Mock Card 2 -->
+                  <div class="p-3.5 bg-slate-900/80 rounded-2xl border border-purple-500/40 space-y-2 relative overflow-hidden">
+                    <div class="flex justify-between items-center text-xs">
+                      <span class="font-mono font-bold text-pink-400 text-[11px]">ว20250</span>
+                      <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">Waiting (รอเปิดสอบ)</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-purple-500/25 text-purple-200 border border-purple-400/50">🏁 สอบปลายภาค</span>
+                      <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-black border border-amber-500/30">⚡ Pokémon</span>
+                    </div>
+                    <p class="font-black text-white text-sm">หลักการเขียนโปรแกรม</p>
+                    <div class="text-[11px] text-slate-400 space-y-0.5">
+                      <p>📚 ในคลัง: ปรนัย 25 ข้อ / อัตนัย 1 ข้อ</p>
+                      <p>🕒 สุ่มสอบ 20 ข้อ | เกณฑ์ผ่าน 50% | สิทธิ์สอบ 1 ครั้ง</p>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1.5 pt-2 border-t border-white/5 text-[10px]">
+                      <span class="col-span-2 py-1.5 bg-gradient-to-r from-pink-500 to-sky-400 text-white font-bold rounded-lg text-center">⚙️ จัดการข้อสอบ</span>
+                      <span class="py-1.5 bg-sky-500/10 text-sky-400 border border-sky-500/30 font-bold rounded-lg text-center">📋 โคลน</span>
+                      <span class="py-1.5 bg-white/5 text-slate-300 border border-white/10 font-bold rounded-lg text-center">✏️ แก้ไข</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-3 text-xs sm:text-sm text-slate-350 leading-relaxed pt-2">
+                <h4 class="font-extrabold text-pink-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                  <span>📌</span> สรุปฟิลด์สำคัญในการสร้าง/ตั้งค่าวิชา:
+                </h4>
+                <ul class="list-disc list-inside space-y-1.5 pl-2">
+                  <li><b>เวลารายข้อ vs เวลาสอบรวม:</b> สามารถตั้งเวลานับถอยหลังรายข้อ (ปรนัย/อัตนัย) เพื่อบังคับให้ทำทีละข้อ หรือตั้งเวลาสอบรวมทั้งฉบับ (นาที)</li>
+                  <li><b>นโยบายการเข้าร่วมสอบ (Join Policy):</b> <code>anytime</code> (เข้าสอบได้ทันที) หรือ <code>lobby_first</code> (ต้องรอในห้องพักคอยจนกว่าครูจะกดปุ่ม Start)</li>
+                  <li><b>โหมดการจัดสอบ:</b> เลือก <code>classic</code> สำหรับข้อสอบทางการมาตรฐาน หรือ <code>pokemon</code> สำหรับจัดสอบในรูปแบบเกม RPG 2D</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- MODULE 2: คลังข้อสอบและการนำเข้า -->
+            <div class="manual-card glass-panel rounded-3xl p-6 sm:p-7 border border-white/5 space-y-5" id="manual-sec-questions" data-keywords="ข้อสอบ ปรนัย อัตนัย นำเข้า excel import csv ตัวเลือก ช้อยส์ เขียนตอบ upload image รูปภาพ">
+              <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-lg text-sky-300">
+                    📝
+                  </div>
+                  <div>
+                    <h3 class="text-base sm:text-lg font-black text-white">2. การจัดการคลังข้อสอบ & นำเข้าจาก Excel (Question Bank)</h3>
+                    <p class="text-xs text-slate-400">สร้างข้อสอบปรนัย อัตนัย แนบรูปภาพ และนำเข้าข้อสอบชุดใหญ่ในคราวเดียว</p>
+                  </div>
+                </div>
+                <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">คลังคำถาม</span>
+              </div>
+
+              <!-- CSS UI MOCKUP 2: Question Bank Screen -->
+              <div class="rounded-2xl bg-[#090d16] border border-white/10 p-3 sm:p-4 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block"></span>
+                    <span class="ml-2 text-[10px] text-slate-400 font-mono">🖥️ ตัวอย่างหน้าจอ: รายการคลังข้อสอบ (Question Bank Workspace)</span>
+                  </div>
+                  <div class="flex gap-1.5">
+                    <span class="px-2 py-0.5 bg-pink-500 text-white rounded text-[9px] font-bold">➕ เพิ่มข้อสอบ</span>
+                    <span class="px-2 py-0.5 bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded text-[9px] font-bold">📥 นำเข้าข้อสอบ</span>
+                  </div>
+                </div>
+
+                <!-- Mock Stats Header -->
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div class="p-2 bg-slate-900 rounded-xl border border-white/5">
+                    <p class="text-[9px] text-slate-400 uppercase">คะแนนรวมในคลัง</p>
+                    <p class="font-black text-pink-400 text-sm">25.0 คะแนน</p>
+                  </div>
+                  <div class="p-2 bg-slate-900 rounded-xl border border-white/5">
+                    <p class="text-[9px] text-slate-400 uppercase">จำนวนข้อสอบ</p>
+                    <p class="font-black text-sky-400 text-sm">20 ข้อ (ปรนัย 18 / อัตนัย 2)</p>
+                  </div>
+                  <div class="p-2 bg-slate-900 rounded-xl border border-white/5">
+                    <p class="text-[9px] text-slate-400 uppercase">เกณฑ์การจัดสอบ</p>
+                    <p class="font-black text-amber-400 text-sm">สุ่มสอบ 20 ข้อ (ผ่าน 50%)</p>
+                  </div>
+                </div>
+
+                <!-- Mock Question Rows -->
+                <div class="space-y-2 pt-1">
+                  <!-- Choice Question Mock -->
+                  <div class="p-3 bg-slate-900/90 rounded-xl border border-pink-500/20 text-xs space-y-1.5">
+                    <div class="flex justify-between items-start">
+                      <p class="font-bold text-white"><span class="text-pink-400 font-black">ข้อ 1 [ปรนัย]:</span> แท็กใดในภาษา HTML ใช้สำหรับสร้างฟอร์มรับข้อมูล?</p>
+                      <span class="px-2 py-0.5 rounded bg-pink-500/20 text-pink-300 font-mono font-bold text-[10px]">1.0 คะแนน</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-1 text-[11px] text-slate-300">
+                      <span class="p-1.5 bg-black/40 rounded border border-white/5">A. &lt;input&gt;</span>
+                      <span class="p-1.5 bg-emerald-500/20 rounded border border-emerald-500/40 text-emerald-300 font-bold">✅ B. &lt;form&gt; (เฉลย)</span>
+                      <span class="p-1.5 bg-black/40 rounded border border-white/5">C. &lt;div&gt;</span>
+                      <span class="p-1.5 bg-black/40 rounded border border-white/5">D. &lt;table&gt;</span>
+                    </div>
+                  </div>
+
+                  <!-- Writing Question Mock -->
+                  <div class="p-3 bg-slate-900/90 rounded-xl border border-amber-500/20 text-xs space-y-1.5">
+                    <div class="flex justify-between items-start">
+                      <p class="font-bold text-white"><span class="text-amber-400 font-black">ข้อ 2 [อัตนัย]:</span> จงอธิบายหลักการทำงานของสถาปัตยกรรม Model-View-Controller (MVC)</p>
+                      <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold text-[10px]">5.0 คะแนน</span>
+                    </div>
+                    <div class="p-2 bg-slate-950/60 rounded border border-amber-500/20 text-[11px] text-slate-350">
+                      <span class="text-amber-300 font-bold">เฉลยแนวทางอ้างอิง:</span> Model จัดการข้อมูลและติดต่อฐานข้อมูล, View รับหน้าที่แสดงผล UI หน้าจอ, Controller ทำหน้าที่รับ Request และประสานงานตรรกะ
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Excel Import Table Reference -->
+              <div class="space-y-2 pt-2">
+                <h4 class="font-extrabold text-amber-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                  <span>📥</span> รูปแบบตาราง 8 คอลัมน์สำหรับนำเข้าผ่าน Excel / Google Sheets:
+                </h4>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-xs text-left border-collapse border border-white/10 rounded-xl">
+                    <thead class="bg-slate-900 text-slate-300 font-bold">
+                      <tr>
+                        <th class="p-2 border border-white/10">Col A (โจทย์)</th>
+                        <th class="p-2 border border-white/10">Col B (ตัวเลือก A)</th>
+                        <th class="p-2 border border-white/10">Col C (ตัวเลือก B)</th>
+                        <th class="p-2 border border-white/10">Col D (ตัวเลือก C)</th>
+                        <th class="p-2 border border-white/10">Col E (ตัวเลือก D)</th>
+                        <th class="p-2 border border-white/10">Col F (เฉลย)</th>
+                        <th class="p-2 border border-white/10">Col G (ประเภท)</th>
+                        <th class="p-2 border border-white/10">Col H (คะแนน)</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5 text-slate-350">
+                      <tr>
+                        <td class="p-2 font-bold text-white border border-white/10">โจทย์คำถาม...</td>
+                        <td class="p-2 border border-white/10">ตัวเลือก ก</td>
+                        <td class="p-2 border border-white/10">ตัวเลือก ข</td>
+                        <td class="p-2 border border-white/10">ตัวเลือก ค</td>
+                        <td class="p-2 border border-white/10">ตัวเลือก ง</td>
+                        <td class="p-2 font-bold text-emerald-400 border border-white/10">ข (หรือข้อความเฉลย)</td>
+                        <td class="p-2 text-pink-400 border border-white/10">choice</td>
+                        <td class="p-2 text-amber-400 border border-white/10">1</td>
+                      </tr>
+                      <tr>
+                        <td class="p-2 font-bold text-white border border-white/10">โจทย์ข้อเขียน...</td>
+                        <td class="p-2 border border-white/10 text-slate-600">-</td>
+                        <td class="p-2 border border-white/10 text-slate-600">-</td>
+                        <td class="p-2 border border-white/10 text-slate-600">-</td>
+                        <td class="p-2 border border-white/10 text-slate-600">-</td>
+                        <td class="p-2 font-bold text-emerald-400 border border-white/10">แนวคำตอบอ้างอิง</td>
+                        <td class="p-2 text-pink-400 border border-white/10">writing</td>
+                        <td class="p-2 text-amber-400 border border-white/10">5</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- MODULE 3: จอภาพควบคุมสด & ห้องพักคอย -->
+            <div class="manual-card glass-panel rounded-3xl p-6 sm:p-7 border border-white/5 space-y-5" id="manual-sec-monitor" data-keywords="จอภาพ ควบคุม monitor lobby ห้องพักคอย เริ่มสอบ pause start finish สด เรียลไทม์ 2d">
+              <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-lg text-emerald-300">
+                    🖥️
+                  </div>
+                  <div>
+                    <h3 class="text-base sm:text-lg font-black text-white">3. จอภาพควบคุมการสอบสด (Live Monitor & Virtual Lobby)</h3>
+                    <p class="text-xs text-slate-400">ติดตามนักเรียนในห้องพักคอย 2D สั่งเริ่มสอบ หยุดชั่วคราว หรือปิดการสอบ</p>
+                  </div>
+                </div>
+                <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">เรียลไทม์</span>
+              </div>
+
+              <!-- CSS UI MOCKUP 3: Live Monitor Screen -->
+              <div class="rounded-2xl bg-[#090d16] border border-white/10 p-3 sm:p-4 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block"></span>
+                    <span class="ml-2 text-[10px] text-slate-400 font-mono">🖥️ ตัวอย่างหน้าจอ: จอภาพควบคุมสด (Live Exam Room Monitor)</span>
+                  </div>
+                  <span class="flex items-center gap-1 text-[9px] text-emerald-400 font-mono">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Live Syncing
+                  </span>
+                </div>
+
+                <!-- Mock Control Buttons Bar -->
+                <div class="p-2.5 bg-slate-900 rounded-xl border border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div class="flex items-center gap-2">
+                    <span class="font-black text-white">สถานะปัจจุบัน:</span>
+                    <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">🟢 กำลังสอบ (Started)</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="px-3 py-1 bg-emerald-600 text-white font-bold rounded-lg text-xs shadow-md">🟢 เริ่มสอบ</span>
+                    <span class="px-3 py-1 bg-amber-600/80 text-white font-bold rounded-lg text-xs">⏸️ หยุดชั่วคราว</span>
+                    <span class="px-3 py-1 bg-red-600/80 text-white font-bold rounded-lg text-xs">🔴 ปิดสอบ</span>
+                    <span class="px-3 py-1 bg-slate-800 text-slate-300 border border-white/10 font-bold rounded-lg text-xs">🔄 รีเซ็ต</span>
+                  </div>
+                </div>
+
+                <!-- Mock 2D Room Grid & Table -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <!-- 2D Virtual Canvas Preview -->
+                  <div class="p-3 bg-slate-950 rounded-xl border border-white/10 flex flex-col justify-between relative min-h-[140px] overflow-hidden" style="background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px); background-size: 16px 16px;">
+                    <span class="text-[9px] font-mono text-slate-500">2D Lobby Room Canvas</span>
+                    <!-- Mock Character Avatars -->
+                    <div class="absolute top-8 left-8 flex items-center gap-1 bg-pink-500/30 border border-pink-400/50 px-1.5 py-0.5 rounded-full text-[9px] text-white">
+                      <span>🧑‍🎓</span> <span>สมชาย (ม.4/1)</span>
+                    </div>
+                    <div class="absolute bottom-6 right-10 flex items-center gap-1 bg-sky-500/30 border border-sky-400/50 px-1.5 py-0.5 rounded-full text-[9px] text-white">
+                      <span>🧑‍🎓</span> <span>กัญญา (ม.4/1)</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 text-center z-10">นักเรียนออนไลน์ในห้อง: 2 คน</div>
+                  </div>
+
+                  <!-- Live Monitor Table Preview -->
+                  <div class="md:col-span-2 overflow-x-auto">
+                    <table class="w-full text-xs text-left border-collapse border border-white/5 rounded-xl bg-slate-900/60">
+                      <thead class="text-slate-400 border-b border-white/10 text-[10px]">
+                        <tr>
+                          <th class="p-2">ชื่อ - สกุล</th>
+                          <th class="p-2">ห้อง/เลขที่</th>
+                          <th class="p-2">ความก้าวหน้า</th>
+                          <th class="p-2">ทุจริต (Strikes)</th>
+                          <th class="p-2 text-right">คำสั่ง</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-white/5 text-[11px] text-slate-350">
+                        <tr>
+                          <td class="p-2 font-bold text-white">ด.ช.สมชาย ใจดี</td>
+                          <td class="p-2">ม.4/1 #1</td>
+                          <td class="p-2 text-emerald-400 font-bold">ข้อ 15/20</td>
+                          <td class="p-2"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold">0 ครั้ง (ปกติ)</span></td>
+                          <td class="p-2 text-right"><span class="text-red-400 font-bold cursor-pointer">เอาออก</span></td>
+                        </tr>
+                        <tr>
+                          <td class="p-2 font-bold text-white">ด.ญ.กัญญา สุขใจ</td>
+                          <td class="p-2">ม.4/1 #2</td>
+                          <td class="p-2 text-sky-400 font-bold">ข้อ 18/20</td>
+                          <td class="p-2"><span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">1 ครั้ง (เตือน)</span></td>
+                          <td class="p-2 text-right"><span class="text-red-400 font-bold cursor-pointer">เอาออก</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MODULE 4: การตรวจคำตอบ & AI ช่วยตรวจ -->
+            <div class="manual-card glass-panel rounded-3xl p-6 sm:p-7 border border-white/5 space-y-5" id="manual-sec-ai-grade" data-keywords="ตรวจข้อสอบ ai gemini อัตนัย ข้อเขียน ให้คะแนน คะแนน feedback ประเมิน">
+              <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-lg text-purple-300">
+                    🤖
+                  </div>
+                  <div>
+                    <h3 class="text-base sm:text-lg font-black text-white">4. การตรวจคำตอบอัตนัยด้วย AI (Google Gemini AI Grading)</h3>
+                    <p class="text-xs text-slate-400">ตรวจคำตอบข้อเขียนเทียบกับเฉลยอย่างเป็นธรรม พร้อมรับเหตุผลประกอบจาก AI</p>
+                  </div>
+                </div>
+                <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">AI อัจฉริยะ</span>
+              </div>
+
+              <!-- CSS UI MOCKUP 4: AI Grading Modal Screen -->
+              <div class="rounded-2xl bg-[#090d16] border border-white/10 p-3 sm:p-4 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block"></span>
+                    <span class="ml-2 text-[10px] text-slate-400 font-mono">🖥️ ตัวอย่างหน้าจอ: ป๊อปอัปตรวจข้อเขียนอัตโนมัติด้วย AI (Gemini Flash)</span>
+                  </div>
+                  <span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-400/40 font-mono text-[9px] font-bold">Google Gemini 2.0 Flash</span>
+                </div>
+
+                <div class="p-3 bg-slate-900 rounded-2xl border border-white/5 space-y-3 text-xs">
+                  <div>
+                    <p class="text-slate-400 font-bold text-[11px]">คำถามข้อที่ 2 (อัตนัย):</p>
+                    <p class="text-white font-black text-sm">จงอธิบายหน้าที่ของ Controller ในสถาปัตยกรรม MVC</p>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="p-2.5 bg-slate-950 rounded-xl border border-white/10 space-y-1">
+                      <span class="text-sky-400 font-bold text-[10px]">คำตอบของนักเรียน:</span>
+                      <p class="text-slate-200 text-xs">"Controller ทำหน้าที่รับคำขอจากผู้ใช้ ประมวลผลตรรกะทางธุรกิจ และเรียก View มาแสดงผลลัพธ์"</p>
+                    </div>
+                    <div class="p-2.5 bg-slate-950 rounded-xl border border-white/10 space-y-1">
+                      <span class="text-amber-400 font-bold text-[10px]">เฉลยแนวทางของคุณครู:</span>
+                      <p class="text-slate-200 text-xs">"Controller เป็นตัวกลางรับ Request จากผู้ใช้ ประมวลผลตรรกะ และส่งต่อไปยัง Model และ View"</p>
+                    </div>
+                  </div>
+
+                  <!-- AI Result Box with Glowing Border -->
+                  <div class="p-3.5 bg-gradient-to-r from-purple-950/40 via-slate-900 to-indigo-950/40 rounded-xl border border-purple-500/40 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="text-purple-300 font-black flex items-center gap-1.5 text-xs">
+                        <span>✨</span> ผลการวิเคราะห์จาก AI:
+                      </span>
+                      <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold text-xs">
+                        คะแนนที่ประเมินได้: 5.0 / 5.0
+                      </span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                      "✅ คำตอบของนักเรียนมีความถูกต้องและครบถ้วนตามหลักการ MVC โดยระบุหน้าที่หลักของ Controller ทั้งการรับ Request ประมวลผลตรรกะ และการส่งต่อข้อมูลไปยัง View ได้อย่างถูกต้องตรงตามเฉลยแนวทาง"
+                    </p>
+                    <div class="flex justify-end gap-2 pt-1">
+                      <span class="px-3 py-1 bg-purple-600 text-white font-bold rounded-lg text-xs cursor-pointer">✨ ให้ AI ตรวจใหม่</span>
+                      <span class="px-3 py-1 bg-emerald-600 text-white font-bold rounded-lg text-xs cursor-pointer">💾 บันทึกคะแนน</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MODULE 5: พิมพ์ใบประกาศ & ส่งออก Excel -->
+            <div class="manual-card glass-panel rounded-3xl p-6 sm:p-7 border border-white/5 space-y-5" id="manual-sec-export" data-keywords="พิมพ์ ประกาศผล print a4 excel csv export ส่งออก ดาวน์โหลด คะแนน สรุปผล">
+              <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-lg text-indigo-300">
+                    📊
+                  </div>
+                  <div>
+                    <h3 class="text-base sm:text-lg font-black text-white">5. การพิมพ์ประกาศผลสอบ และส่งออกเป็น Excel/CSV</h3>
+                    <p class="text-xs text-slate-400">พิมพ์เอกสารทางการขนาด A4 และดาวน์โหลดคะแนนเพื่อนำไปกรอก ปพ. ได้ทันที</p>
+                  </div>
+                </div>
+                <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">รายงาน & ผลสอบ</span>
+              </div>
+
+              <!-- CSS UI MOCKUP 5: Results Table & A4 Official Report Preview -->
+              <div class="rounded-2xl bg-[#090d16] border border-white/10 p-3 sm:p-4 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block"></span>
+                    <span class="ml-2 text-[10px] text-slate-400 font-mono">🖥️ ตัวอย่างหน้าจอ: เมนูพิมพ์ใบประกาศ & ส่งออกไฟล์ Excel (CSV UTF-8)</span>
+                  </div>
+                  <div class="flex gap-2">
+                    <span class="px-2.5 py-1 bg-sky-500/20 text-sky-300 border border-sky-400/30 rounded text-[10px] font-bold">🖨️ พิมพ์ประกาศผลสอบ</span>
+                    <span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded text-[10px] font-bold">📥 ส่งออกคะแนน (Excel/CSV)</span>
+                  </div>
+                </div>
+
+                <!-- Mock Miniature A4 Report Sheet -->
+                <div class="max-w-xl mx-auto bg-white text-slate-900 rounded-xl p-5 shadow-lg border border-slate-300 space-y-3 text-xs font-sans">
+                  <div class="text-center border-b border-slate-200 pb-2 space-y-1">
+                    <p class="font-extrabold text-sm text-black">ประกาศผลคะแนนการสอบออนไลน์</p>
+                    <p class="font-bold text-xs text-slate-800">รายวิชา ว30291 การสร้าง Web Application (สอบกลางภาค)</p>
+                    <p class="text-[11px] text-slate-600">ปีการศึกษา 2569 ภาคเรียนที่ 1 | เกณฑ์ผ่าน: 50% (10 คะแนนเต็ม 20)</p>
+                  </div>
+
+                  <table class="w-full text-[11px] text-left border-collapse border border-slate-300">
+                    <thead class="bg-slate-100 font-bold text-slate-700">
+                      <tr>
+                        <th class="p-1.5 border border-slate-300">ลำดับ</th>
+                        <th class="p-1.5 border border-slate-300">เลขประจำตัว</th>
+                        <th class="p-1.5 border border-slate-300">ชื่อ - สกุล</th>
+                        <th class="p-1.5 border border-slate-300">ห้อง/เลขที่</th>
+                        <th class="p-1.5 border border-slate-300 text-center">ปรนัย</th>
+                        <th class="p-1.5 border border-slate-300 text-center">อัตนัย</th>
+                        <th class="p-1.5 border border-slate-300 text-center">รวม</th>
+                        <th class="p-1.5 border border-slate-300 text-center">ผลสอบ</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 text-slate-800">
+                      <tr>
+                        <td class="p-1.5 border border-slate-300 text-center">1</td>
+                        <td class="p-1.5 border border-slate-300 font-mono">12345</td>
+                        <td class="p-1.5 border border-slate-300 font-bold">ด.ช.สมชาย ใจดี</td>
+                        <td class="p-1.5 border border-slate-300">ม.4/1 #1</td>
+                        <td class="p-1.5 border border-slate-300 text-center">15</td>
+                        <td class="p-1.5 border border-slate-300 text-center">5</td>
+                        <td class="p-1.5 border border-slate-300 text-center font-bold text-black">20</td>
+                        <td class="p-1.5 border border-slate-300 text-center text-emerald-600 font-bold">ผ่าน (Pass)</td>
+                      </tr>
+                      <tr>
+                        <td class="p-1.5 border border-slate-300 text-center">2</td>
+                        <td class="p-1.5 border border-slate-300 font-mono">12346</td>
+                        <td class="p-1.5 border border-slate-300 font-bold">ด.ญ.กัญญา สุขใจ</td>
+                        <td class="p-1.5 border border-slate-300">ม.4/1 #2</td>
+                        <td class="p-1.5 border border-slate-300 text-center">14</td>
+                        <td class="p-1.5 border border-slate-300 text-center">4</td>
+                        <td class="p-1.5 border border-slate-300 text-center font-bold text-black">18</td>
+                        <td class="p-1.5 border border-slate-300 text-center text-emerald-600 font-bold">ผ่าน (Pass)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <div class="text-right text-[11px] text-slate-600 pt-2">
+                    <p>ลงชื่อ..........................................................ครูผู้สอน</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MODULE 6: ระบบป้องกันการทุจริต -->
+            <div class="manual-card glass-panel rounded-3xl p-6 sm:p-7 border border-white/5 space-y-5" id="manual-sec-anti-cheat" data-keywords="ทุจริต สลับหน้าจอ cheat anti-cheating strike devtools f12 logs บันทึกความเสี่ยง">
+              <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-lg text-red-300">
+                    🚨
+                  </div>
+                  <div>
+                    <h3 class="text-base sm:text-lg font-black text-white">6. ระบบตรวจจับและป้องกันการทุจริต (Anti-Cheating Engine)</h3>
+                    <p class="text-xs text-slate-400">การรักษาความปลอดภัยขั้นสูง บันทึกพฤติกรรมเสี่ยง และระงับสิทธิ์อัตโนมัติ</p>
+                  </div>
+                </div>
+                <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">ความปลอดภัย</span>
+              </div>
+
+              <!-- CSS UI MOCKUP 6: Anti-Cheating Alert Modal Screen -->
+              <div class="rounded-2xl bg-[#090d16] border border-white/10 p-3 sm:p-4 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block"></span>
+                    <span class="ml-2 text-[10px] text-slate-400 font-mono">🖥️ ตัวอย่างหน้าจอ: หน้าต่างเตือนทุจริตแบบเรียลไทม์ (เมื่อนักเรียนสลับแท็บ/ย่อจอ)</span>
+                  </div>
+                  <span class="px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30 text-[9px] font-bold">Strike Alert</span>
+                </div>
+
+                <!-- Mock Red Warning Modal -->
+                <div class="max-w-md mx-auto p-5 bg-gradient-to-b from-red-950/80 to-slate-900 rounded-2xl border-2 border-red-500/80 shadow-[0_0_30px_rgba(239,68,68,0.25)] text-center space-y-3">
+                  <div class="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/50 flex items-center justify-center text-2xl mx-auto animate-bounce">
+                    🚨
+                  </div>
+                  <h4 class="text-base font-black text-red-400">⚠️ ตรวจพบการพยายามสลับหน้าจอสอบ!</h4>
+                  <div class="inline-block px-3 py-1 rounded-full bg-red-500/30 border border-red-400/50 text-xs font-mono font-black text-white">
+                    จำนวนครั้งที่ผิดกฎ: 1 / 3 ครั้ง (Strike 1)
+                  </div>
+                  <p class="text-xs text-slate-300 leading-relaxed">
+                    ระบบตรวจพบว่าคุณได้สลับแท็บหรือคลิกออกนอกหน้าต่างข้อสอบ ระบบได้บันทึกเวลาและแจ้งเตือนไปยังครูผู้คุมสอบแล้ว <b class="text-red-400">หากทำผิดกฎครบ 3 ครั้ง ระบบจะส่งข้อสอบและระงับสิทธิ์ทันที</b>
+                  </p>
+                  <span class="inline-block px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-xl shadow-lg cursor-pointer">
+                    รับทราบและกลับสู่ข้อสอบ 🔒
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- MODULE 7: สำหรับนักเรียน -->
+            <div class="manual-card glass-panel rounded-3xl p-6 sm:p-7 border border-white/5 space-y-5" id="manual-sec-student" data-keywords="นักเรียน student ลงทะเบียน ทำข้อสอบ pokemon rpg ผลสอบ lobby เกม">
+              <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-lg text-amber-300">
+                    🎓
+                  </div>
+                  <div>
+                    <h3 class="text-base sm:text-lg font-black text-white">7. คู่มือสำหรับนักเรียนผู้เข้าสอบ (Student Portal - 2 Modes)</h3>
+                    <p class="text-xs text-slate-400">คำแนะนำการทำข้อสอบทั้งแบบโหมดมาตรฐาน (Classic) และโหมดเกม RPG 2D</p>
+                  </div>
+                </div>
+                <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">ฝั่งนักเรียน</span>
+              </div>
+
+              <!-- CSS UI MOCKUP 7: Side-by-Side Exam Modes -->
+              <div class="rounded-2xl bg-[#090d16] border border-white/10 p-3 sm:p-4 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block"></span>
+                    <span class="ml-2 text-[10px] text-slate-400 font-mono">🖥️ ตัวอย่างหน้าจอ: โหมดข้อสอบมาตรฐาน (Classic) VS โหมดเกม RPG (Pokémon)</span>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  <!-- Mode 1: Classic Exam UI -->
+                  <div class="p-3 bg-slate-900 rounded-2xl border border-sky-500/30 space-y-2 text-xs">
+                    <div class="flex justify-between items-center text-[10px] text-slate-400 pb-1 border-b border-white/5">
+                      <span class="font-bold text-sky-400">📝 โหมดมาตรฐาน (Classic Exam)</span>
+                      <span class="font-mono text-amber-300 font-bold">⏱️ 00:48</span>
+                    </div>
+                    <!-- Mock Progress Bar -->
+                    <div class="space-y-1">
+                      <div class="flex justify-between text-[10px] text-slate-400">
+                        <span>ข้อที่ 5 จาก 20 ข้อ</span>
+                        <span>25%</span>
+                      </div>
+                      <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-pink-500 rounded-full" style="width: 25%"></div>
+                      </div>
+                    </div>
+                    <!-- Mock Question Box -->
+                    <p class="font-bold text-white text-xs pt-1">5. สัญลักษณ์ใดใน HTML ใช้เขียนคำอธิบายโค้ด (Comment)?</p>
+                    <div class="space-y-1 text-[11px]">
+                      <div class="p-1.5 bg-black/40 rounded border border-white/5 text-slate-300 flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded-full border border-slate-500 inline-block"></span>
+                        <span>A. // ข้อความ</span>
+                      </div>
+                      <div class="p-1.5 bg-pink-500/20 rounded border border-pink-500/40 text-white font-bold flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded-full border border-pink-400 bg-pink-500 inline-block"></span>
+                        <span>B. &lt;!-- ข้อความ --&gt;</span>
+                      </div>
+                      <div class="p-1.5 bg-black/40 rounded border border-white/5 text-slate-300 flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded-full border border-slate-500 inline-block"></span>
+                        <span>C. /* ข้อความ */</span>
+                      </div>
+                    </div>
+                    <span class="block w-full py-1.5 bg-gradient-to-r from-pink-500 to-sky-400 text-white font-bold text-[10px] rounded-lg text-center mt-2">ข้อถัดไป ➡️</span>
+                  </div>
+
+                  <!-- Mode 2: Pokemon RPG Adventure UI -->
+                  <div class="p-3 bg-slate-900 rounded-2xl border border-amber-500/30 space-y-2 text-xs">
+                    <div class="flex justify-between items-center text-[10px] text-slate-400 pb-1 border-b border-white/5">
+                      <span class="font-bold text-amber-300 flex items-center gap-1"><span>⚡</span> โหมดผจญภัย (Pokémon RPG)</span>
+                      <span class="font-mono text-emerald-400 font-bold">HP: 100/100</span>
+                    </div>
+                    <!-- Mock 2D Map with Pixels -->
+                    <div class="h-28 bg-emerald-950/60 rounded-xl border border-emerald-500/30 relative flex flex-col justify-between p-2 overflow-hidden" style="background-image: radial-gradient(rgba(16,185,129,0.15) 1px, transparent 1px); background-size: 14px 14px;">
+                      <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 rounded bg-black/70 text-[9px] text-amber-300 border border-amber-400/40">⚔️ Battle Arena</span>
+                        <div class="text-right">
+                          <span class="text-[10px] font-bold text-white">⚡ NPC อาจารย์</span>
+                          <div class="h-1 w-14 bg-red-500 rounded-full mt-0.5"></div>
+                        </div>
+                      </div>
+                      <!-- Trainer Sprite & Enemy Sprite Mock -->
+                      <div class="flex justify-between items-end px-4">
+                        <span class="text-2xl">🏃‍♂️</span>
+                        <span class="text-2xl animate-pulse">👾</span>
+                      </div>
+                    </div>
+                    <!-- Mock Battle Command Dialog -->
+                    <div class="p-2 bg-slate-950 rounded-xl border border-white/10 space-y-1">
+                      <p class="text-[10px] text-amber-300 font-bold">"อาจารย์ท้าดวลข้อที่ 5! เลือกท่าโจมตี (คำตอบ) ที่ถูกต้อง!"</p>
+                      <div class="grid grid-cols-2 gap-1 text-[10px] font-mono">
+                        <span class="p-1 bg-slate-800 rounded border border-white/10 text-center text-slate-200">[A] ท่าโจมตี 1</span>
+                        <span class="p-1 bg-amber-500/20 rounded border border-amber-400/30 text-center text-amber-200 font-bold">[B] ท่าโจมตี 2 (เลือก)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MODULE 8: คำถามที่พบบ่อย -->
+            <div class="manual-card glass-panel rounded-3xl p-6 sm:p-7 border border-white/5 space-y-5" id="manual-sec-faq" data-keywords="faq ถามตอบ ปัญหา error เข้าไม่ได้ google key รหัสผ่าน สอบใหม่">
+              <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-lg text-teal-300">
+                    ❓
+                  </div>
+                  <div>
+                    <h3 class="text-base sm:text-lg font-black text-white">8. คำถามที่พบบ่อย & การแก้ปัญหา (FAQ & Troubleshooting)</h3>
+                    <p class="text-xs text-slate-400">รวมแนวทางการแก้ปัญหาที่พบบ่อยในการจัดสอบจริง</p>
+                  </div>
+                </div>
+                <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">การแก้ปัญหา</span>
+              </div>
+
+              <div class="space-y-3 text-xs sm:text-sm text-slate-350 leading-relaxed">
+                <div class="p-3.5 bg-slate-900/90 rounded-2xl border border-white/10 space-y-1">
+                  <p class="font-bold text-white flex items-center gap-1.5"><span class="text-sky-400">Q:</span> ล็อกอินผ่าน Google ไม่ได้ เกิดข้อผิดพลาด Token?</p>
+                  <p class="text-xs text-slate-400 pl-4"><span class="text-emerald-400 font-bold">A:</span> ต้องใช้อีเมลโดเมน <code>@skj.ac.th</code> เท่านั้น หรือคลิกลิงก์ <b>"🔑 หรือเข้าสู่ระบบด้วยรหัสผ่านผู้ดูแลระบบ"</b> ด้านล่างปุ่ม Google แล้วกรอกรหัสผ่าน Master Admin (`admin1234`)</p>
+                </div>
+                <div class="p-3.5 bg-slate-900/90 rounded-2xl border border-white/10 space-y-1">
+                  <p class="font-bold text-white flex items-center gap-1.5"><span class="text-sky-400">Q:</span> นักเรียนเผลอสลับหน้าจอจนโดนระงับสิทธิ์สอบ (Disqualified)?</p>
+                  <p class="text-xs text-slate-400 pl-4"><span class="text-emerald-400 font-bold">A:</span> ไปที่เมนู "📊 ผลสอบและตรวจอัตนัย" ค้นหาชื่อนักเรียน แล้วคลิก <b>"🗑️ ลบผลสอบ"</b> ระบบจะเคลียร์ประวัติผลสอบและ Log ความเสี่ยง ทำให้นักเรียนสามารถลงทะเบียนเข้าทำข้อสอบใหม่ได้ทันที</p>
+                </div>
+                <div class="p-3.5 bg-slate-900/90 rounded-2xl border border-white/10 space-y-1">
+                  <p class="font-bold text-white flex items-center gap-1.5"><span class="text-sky-400">Q:</span> AI ตรวจข้อเขียนขึ้น Error หรือไม่ทำงาน?</p>
+                  <p class="text-xs text-slate-400 pl-4"><span class="text-emerald-400 font-bold">A:</span> ตรวจสอบที่เมนู "⚙️ ตั้งค่าส่วนกลาง" ช่อง Gemini API Key ว่ากรอกคีย์ถูกต้องหรือไม่ (รับคีย์ฟรีจาก Google AI Studio) ทั้งนี้ระบบยังมีอัลกอริทึม Text Similarity ช่วยตรวจสำรองให้อัตโนมัติ</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
   </main>
@@ -991,7 +1704,9 @@
     window.onload = async () => {
       await loadGlobalExams();
       if (isInWorkspace) {
-        if (activeExamId === 'global') {
+        if (currentTab === 'manual') {
+          enterManualTab();
+        } else if (activeExamId === 'global') {
           enterGlobalSettings();
         } else {
           enterWorkspace(activeExamId, currentTab);
@@ -1391,10 +2106,87 @@
       switchTab('settings');
     }
 
+    function enterManualTab() {
+      isInWorkspace = true;
+      document.getElementById('lobby-screen').classList.add('hidden');
+      document.getElementById('workspace-screen').classList.remove('hidden');
+
+      if (!activeExamId || activeExamId === 'global') {
+        activeExamId = 'global';
+        document.getElementById('workspace-subject-code').textContent = "MANUAL";
+        document.getElementById('workspace-subject-name').textContent = "คู่มือการใช้งานระบบ";
+        document.getElementById('workspace-subject-status').textContent = "Guide";
+        document.getElementById('workspace-subject-area').textContent = "Documentation";
+      }
+
+      switchTab('manual');
+    }
+
+    function filterManualTopics() {
+      const searchInput = document.getElementById('manualTopicSearch');
+      const val = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      const cards = document.querySelectorAll('.manual-card');
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        const keywords = (card.getAttribute('data-keywords') || '').toLowerCase();
+        if (!val || text.includes(val) || keywords.includes(val)) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    function printManualDocument() {
+      const printWin = window.open('', '_blank');
+      const contentEl = document.getElementById('section-manual');
+      if (!contentEl) return;
+
+      const printHtml = `
+      <!DOCTYPE html>
+      <html lang="th">
+      <head>
+        <meta charset="utf-8">
+        <title>คู่มือการใช้งานระบบจัดการข้อสอบออนไลน์</title>
+        <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+        <style>
+          body { font-family: 'Sarabun', sans-serif; margin: 1.5cm; color: #111; line-height: 1.6; }
+          h2, h3, h4 { color: #000; margin-bottom: 8px; }
+          .manual-card { border: 1px solid #ddd; border-radius: 12px; padding: 20px; margin-bottom: 20px; page-break-inside: avoid; }
+          table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+          th, td { border: 1px solid #999; padding: 6px 10px; font-size: 12px; }
+          th { background: #eee; font-weight: bold; }
+          code { background: #f0f0f0; padding: 2px 4px; border-radius: 4px; font-size: 11px; }
+          @media print {
+            button, input, a { display: none !important; }
+            .manual-card { border-color: #aaa; }
+          }
+        </style>
+      </head>
+      <body>
+        <div style="text-align: right; margin-bottom: 20px;">
+          <button onclick="window.print()" style="padding: 8px 18px; background: #0284c7; color: #fff; font-weight: bold; border-radius: 6px; cursor: pointer; border: none; font-size: 14px;">🖨️ สั่งพิมพ์ (Print)</button>
+        </div>
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="margin: 0; font-size: 24px;">คู่มือการใช้งานระบบจัดการข้อสอบออนไลน์</h1>
+          <p style="margin: 4px 0 0 0; font-size: 14px; color: #555;">สำหรับคุณครูผู้สอนและผู้ดูแลระบบ | โรงเรียนสวนกุหลาบวิทยาลัย (จิรประวัติ) นครสวรรค์</p>
+        </div>
+        ${contentEl.innerHTML}
+      </body>
+      </html>
+      `;
+
+      printWin.document.write(printHtml);
+      printWin.document.close();
+    }
+
     function switchTab(tabName) {
       currentTab = tabName;
       document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
-      document.getElementById(`section-${tabName}`).classList.remove('hidden');
+      const targetSection = document.getElementById(`section-${tabName}`);
+      if (targetSection) {
+        targetSection.classList.remove('hidden');
+      }
 
       document.querySelectorAll('[id^="tab-btn-"]').forEach(b => b.classList.remove('active-tab'));
       const activeBtn = document.getElementById(`tab-btn-${tabName}`);
@@ -1415,6 +2207,9 @@
         loadLogs();
       } else if (tabName === 'exam-settings') {
         loadActiveExamSettings();
+      } else if (tabName === 'manual') {
+        const m = document.getElementById('section-manual');
+        if (m) m.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
 
@@ -2279,7 +3074,7 @@
                                 </td>
                                 <td class="py-4 px-4 text-xs font-bold text-slate-350">${escapeHtml(q.correct_answer || '')}</td>
                                 <td class="py-4 px-4">
-                                    <input type="number" min="0" step="0.5" value="${q.points}"
+                                    <input type="number" min="0" step="any" value="${q.points}"
                                         onchange="updateQuestionPoints('${q.id}', this.value)"
                                         class="w-16 bg-slate-800 border border-white/10 rounded-lg px-2 py-1 text-center text-white font-bold text-sm outline-none focus:border-pink-500 transition-colors" />
                                 </td>
@@ -2316,7 +3111,7 @@
                                 </td>
                                 <td class="py-4 px-4 text-xs font-bold text-slate-350 max-w-sm leading-relaxed">${escapeHtml(q.correct_answer || '(ไม่มีเฉลยอ้างอิง)')}</td>
                                 <td class="py-4 px-4">
-                                    <input type="number" min="0" step="0.5" value="${q.points}"
+                                    <input type="number" min="0" step="any" value="${q.points}"
                                         onchange="updateQuestionPoints('${q.id}', this.value)"
                                         class="w-16 bg-slate-800 border border-white/10 rounded-lg px-2 py-1 text-center text-white font-bold text-sm outline-none focus:border-pink-500 transition-colors" />
                                 </td>
@@ -2426,7 +3221,7 @@
 
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1">คะแนนของข้อนี้</label>
-            <input type="number" id="swal-q-points" class="w-full bg-slate-800 border border-white/10 rounded-xl p-3 text-white outline-none" required value="${q.points || 1}">
+            <input type="number" min="0" step="any" id="swal-q-points" class="w-full bg-slate-800 border border-white/10 rounded-xl p-3 text-white outline-none" required value="${(q.points !== undefined && q.points !== null && q.points !== '') ? q.points : 1}">
           </div>
 
           <!-- Choice options -->
@@ -2553,6 +3348,11 @@
           const points = popup.querySelector('#swal-q-points').value;
           const imageUrl = popup.querySelector('#swal-q-image-url').value;
 
+          if (points === '' || isNaN(parseFloat(points)) || parseFloat(points) < 0) {
+            Swal.showValidationMessage('กรุณาระบุคะแนนของข้อนี้เป็นตัวเลขที่ถูกต้อง (เช่น 0.5 หรือ 1)');
+            return false;
+          }
+
           if (!question.trim()) {
             Swal.showValidationMessage('กรุณากรอกโจทย์คำถาม');
             return false;
@@ -2655,6 +3455,11 @@
     }
 
     async function updateQuestionPoints(id, points) {
+      const parsedPoints = parseFloat(points);
+      if (isNaN(parsedPoints) || parsedPoints < 0) {
+        Swal.fire('ข้อผิดพลาด', 'กรุณาระบุคะแนนเป็นตัวเลขที่ถูกต้อง (เช่น 0.5 หรือ 1)', 'warning');
+        return;
+      }
       const formData = new FormData();
       formData.append('id', id);
       formData.append('points', points);
@@ -2666,6 +3471,15 @@
         const res = await response.json();
         if (!res.success) {
           Swal.fire('ล้มเหลว', res.message || 'อัปเดตคะแนนไม่สำเร็จ', 'error');
+        } else {
+          // Update in memory and refresh summary
+          const targetQ = globalQuestionsList.find(q => String(q.id) === String(id));
+          if (targetQ) {
+            targetQ.points = parsedPoints;
+          }
+          if (typeof loadQuestions === 'function') {
+            loadQuestions();
+          }
         }
       } catch (e) {
         console.error(e);
@@ -3534,6 +4348,108 @@
 
       printWindow.document.write(htmlContent);
       printWindow.document.close();
+    }
+
+    function exportResultsCSV() {
+      const exam = globalExamsList.find(e => e.id === activeExamId);
+      if (!exam) {
+        Swal.fire('ข้อผิดพลาด', 'ไม่พบรายละเอียดวิชาสอบ', 'error');
+        return;
+      }
+      const roomFilter = document.getElementById('results-filter-room') ? document.getElementById('results-filter-room').value : 'ALL';
+      const roundFilter = document.getElementById('results-filter-round') ? document.getElementById('results-filter-round').value : 'ALL';
+
+      const filtered = resultsData.filter(r => {
+        if (roomFilter !== 'ALL' && String(r.room || '').trim() !== String(roomFilter).trim()) return false;
+        if (roundFilter !== 'ALL' && String(r.exam_round || '1').trim() !== String(roundFilter).trim()) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลผลการสอบที่จะส่งออกตามเงื่อนไขที่เลือก', 'warning');
+        return;
+      }
+
+      // Sort by room then student_number
+      filtered.sort((a, b) => {
+        const roomA = String(a.room || '');
+        const roomB = String(b.room || '');
+        if (roomA !== roomB) return roomA.localeCompare(roomB, 'th', { numeric: true });
+        const numA = parseInt(a.student_number || 0) || 0;
+        const numB = parseInt(b.student_number || 0) || 0;
+        return numA - numB;
+      });
+
+      // UTF-8 BOM for Thai language display in Microsoft Excel
+      let csv = '\uFEFF';
+      csv += 'ลำดับ,เลขประจำตัว,ชื่อ-นามสกุล,ห้อง,เลขที่,คะแนนรวม,คะแนนปรนัย,คะแนนอัตนัย,ผลการประเมิน,รอบสอบ,เวลาที่ใช้(วินาที),สลับหน้าจอ(ครั้ง),สถานะทุจริต,เวลาที่ส่งข้อสอบ\n';
+
+      const clean = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+
+      filtered.forEach((r, idx) => {
+        let cScore = 0;
+        let wScore = 0;
+        try {
+          const ansList = JSON.parse(r.answers_json || '[]');
+          ansList.forEach(a => {
+            if (a.type === 'choice') {
+              if (a.isCorrect === true || a.isCorrect === 'ถูกต้อง') {
+                cScore += parseFloat(a.points || 1);
+              }
+            } else if (a.type === 'writing') {
+              if (isFinite(a.isCorrect)) {
+                wScore += parseFloat(a.isCorrect);
+              }
+            }
+          });
+        } catch(e) {}
+
+        const isCheated = (r.cheating_flag === 'YES' || (parseInt(r.cheating_count || 0) >= (parseInt(exam.max_strikes) || 3)));
+        const passPercent = parseFloat(exam.passing_percentage) || 50;
+        const totalMaxQ = parseFloat(exam.num_questions) || 10;
+        const sScore = parseFloat(r.score || 0);
+        const passMinScore = (totalMaxQ * passPercent) / 100;
+        const isPass = sScore >= passMinScore;
+        const evalStatus = isCheated ? 'ระงับสิทธิ์สอบ (ทุจริต)' : (isPass ? 'ผ่าน' : 'ไม่ผ่าน');
+
+        csv += [
+          idx + 1,
+          clean(r.student_code || '-'),
+          clean(r.name || ''),
+          clean(r.room ? 'ม.' + r.room : '-'),
+          clean(r.student_number || '-'),
+          sScore,
+          cScore,
+          wScore,
+          clean(evalStatus),
+          clean(r.exam_round || '1'),
+          r.total_time_spent || 0,
+          r.cheating_count || 0,
+          clean(r.cheating_flag || 'NO'),
+          clean(r.submitted_at || '')
+        ].join(',') + '\n';
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const safeSubj = (exam.subject_code || 'EXAM').replace(/[^a-zA-Z0-9ก-๙_-]/g, '_');
+      const safeRoom = roomFilter === 'ALL' ? 'ทุกห้อง' : ('ห้อง_' + roomFilter.replace(/[^a-zA-Z0-9ก-๙_-]/g, '_'));
+      const safeDate = new Date().toISOString().slice(0, 10);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `ผลคะแนน_${safeSubj}_${safeRoom}_${safeDate}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'ส่งออกคะแนนสำเร็จ',
+        text: `ดาวน์โหลดไฟล์ผลสอบจำนวน ${filtered.length} รายการเรียบร้อยแล้ว`,
+        timer: 2000,
+        showConfirmButton: false
+      });
     }
 
     async function openGradingModal(resultId) {

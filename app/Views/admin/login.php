@@ -101,11 +101,82 @@
                data-logo_alignment="left">
           </div>
         </div>
+
+        <!-- Master Admin Password Login Fallback -->
+        <div class="w-full mt-6 pt-5 border-t border-white/10 text-center">
+          <button type="button" onclick="togglePasswordLogin()" class="text-xs text-slate-400 hover:text-sky-400 transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer">
+            <span>🔑</span> หรือเข้าสู่ระบบด้วยรหัสผ่านผู้ดูแลระบบ
+          </button>
+          
+          <form id="passwordLoginForm" onsubmit="handlePasswordLogin(event)" class="hidden mt-4 space-y-3 text-left">
+            <div>
+              <label for="adminPasswordInput" class="text-xs font-bold text-slate-300 mb-1 block">รหัสผ่านผู้ดูแลระบบ (Admin Password)</label>
+              <input type="password" id="adminPasswordInput" placeholder="กรอกรหัสผ่านผู้ดูแลระบบ" 
+                     class="input-box text-sm mb-2 w-full" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn-main text-sm py-2.5 flex items-center justify-center gap-2">
+              <span>เข้าสู่ระบบ</span> <span>🚀</span>
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
+    function togglePasswordLogin() {
+      const form = document.getElementById('passwordLoginForm');
+      form.classList.toggle('hidden');
+      if (!form.classList.contains('hidden')) {
+        document.getElementById('adminPasswordInput').focus();
+      }
+    }
+
+    async function handlePasswordLogin(e) {
+      e.preventDefault();
+      const password = document.getElementById('adminPasswordInput').value;
+      if (!password) return;
+
+      Swal.fire({
+        title: 'กำลังตรวจสอบรหัสผ่าน...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      const formData = new FormData();
+      formData.append('password', password);
+
+      try {
+        const res = await fetch('/api/teacher/login', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+
+        const data = await res.json();
+        Swal.close();
+
+        if (data.success) {
+          window.location.href = '/teacher/dashboard';
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'เข้าสู่ระบบล้มเหลว',
+            text: data.message || 'รหัสผ่านไม่ถูกต้อง'
+          });
+        }
+      } catch (error) {
+        Swal.close();
+        Swal.fire({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด',
+          text: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ในขณะนี้'
+        });
+      }
+    }
+
     window.handleGoogleCredentialResponse = async (response) => {
         Swal.fire({
             title: 'กำลังลงชื่อเข้าใช้งานด้วย Google...',

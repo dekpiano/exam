@@ -9,6 +9,7 @@ $routes->get('/', 'ExamController::index');
 $routes->get('/lobby', 'ExamController::lobby');
 $routes->get('/exam', 'ExamController::exam');
 $routes->get('/result', 'ExamController::result');
+$routes->get('uploads/(:any)', 'AdminController::serveUpload/$1');
 
 // Student API Routes
 $routes->group('api', function($routes) {
@@ -31,6 +32,7 @@ $routes->get('/teacher/results', 'AdminController::results');
 $routes->get('/teacher/logs', 'AdminController::logs');
 $routes->get('/teacher/settings', 'AdminController::settings');
 $routes->get('/teacher/exam-settings', 'AdminController::examSettings');
+$routes->get('/teacher/manual', 'AdminController::manual');
 
 // Teacher API Routes
 $routes->group('api/teacher', function($routes) {

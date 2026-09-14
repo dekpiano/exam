@@ -9,12 +9,7 @@
 </IfModule>
 
 # Disable directory browsing
-Options All -Indexes
-
-# Block access to sensitive project files (when served from project root)
-<FilesMatch "^(\.env|\.git.*|composer\.(json|lock)|schema\.sql|custom\.ini|env|phpunit\.dist\.xml|preload\.php)$">
-    Require all denied
-</FilesMatch>
+Options -Indexes
 
 # ----------------------------------------------------------------------
 # Rewrite engine
@@ -26,14 +21,6 @@ Options All -Indexes
 	Options +FollowSymlinks
 	RewriteEngine On
 
-	# Block direct access to internal project folders
-	RewriteRule ^(app|vendor|writable|tests|builds|mysql_data|\.git)(/|$) - [F,L]
-
-	# If you installed CodeIgniter in a subfolder, you will need to
-	# change the following line to match the subfolder you need.
-	# http://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritebase
-	# RewriteBase /
-
 	# Redirect Trailing Slashes...
 	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteCond %{REQUEST_URI} (.+)/$
@@ -43,10 +30,6 @@ Options All -Indexes
 	RewriteCond %{HTTPS} !=on
 	RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
 	RewriteRule ^ http://%1%{REQUEST_URI} [R=301,L]
-
-	# Serve uploaded images from public/uploads when not found in legacy root uploads/
-	RewriteCond %{REQUEST_FILENAME} !-f
-	RewriteRule ^uploads/(.+)$ public/uploads/$1 [L]
 
 	# Checks to see if the user is attempting to access a valid file,
 	# such as an image or css document, if this isn't true it sends the
@@ -67,7 +50,7 @@ Options All -Indexes
 </IfModule>
 
 # Disable server signature start
-	ServerSignature Off
+ServerSignature Off
 # Disable server signature end
 
 # Add mime types for fonts
@@ -77,4 +60,3 @@ Options All -Indexes
     AddType application/x-font-ttf .ttf
     AddType application/vnd.ms-fontobject .eot
 </IfModule>
-
