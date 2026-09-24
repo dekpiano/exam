@@ -130,6 +130,7 @@ class ExamController extends BaseController
             'maxStrikes' => isset($exam['max_strikes']) ? (int) $exam['max_strikes'] : (int) ($settings['Max Cheating Strikes'] ?? 3),
             'examDuration' => (int) ($exam['exam_duration'] ?? 0),
             'examDurationSeconds' => $remainingSeconds,
+            'attemptStartedAt' => $attempt['started_at'] ?? null,
             'antiCheating' => isset($exam['anti_cheating']) ? (int) $exam['anti_cheating'] : 1,
             'examId' => $examId,
             'examMode' => $exam['exam_mode'] ?? 'classic',
@@ -399,6 +400,14 @@ class ExamController extends BaseController
         }
         $attemptNumber = $attempts + 1;
 
+        // Serialize start requests for the same student/exam to prevent duplicate Attempts.
+        $db = db_connect();
+        $lockName = 'exam_start_' . sha1($examId . '|' . $email);
+        $lockResult = $db->query("SELECT GET_LOCK(" . $db->escape($lockName) . ", 5) AS locked")->getRowArray();
+        if ((int) ($lockResult['locked'] ?? 0) !== 1) {
+            return $this->respond(['success' => false, 'message' => 'ระบบกำลังเริ่มสอบ กรุณาลองใหม่อีกครั้ง'], 409);
+        }
+
         $attemptModel = new \App\Models\ExamAttemptModel();
         $attempt = $attemptModel->where('exam_id', $examId)
             ->where('student_email', $email)
@@ -410,6 +419,7 @@ class ExamController extends BaseController
             $snapshot = json_decode($attempt['questions_json'] ?? '', true);
             if (is_array($snapshot) && !empty($snapshot)) {
                 $this->session->set('student_attempt_id', $attempt['id']);
+                $db->query("SELECT RELEASE_LOCK(" . $db->escape($lockName) . ")");
                 return $this->respond([
                     'success' => true,
                     'attempt_id' => $attempt['id'],
@@ -436,6 +446,7 @@ class ExamController extends BaseController
         shuffle($writings);
         $selectedQuestions = array_merge($selectedChoices, $writings);
         if (empty($selectedQuestions)) {
+            $db->query("SELECT RELEASE_LOCK(" . $db->escape($lockName) . ")");
             return $this->respond(['success' => false, 'message' => 'รายวิชานี้ยังไม่มีข้อสอบ'], 422);
         }
 
@@ -478,6 +489,7 @@ class ExamController extends BaseController
             'updated_at' => $startedAt,
         ]);
         $this->session->set('student_attempt_id', $attemptId);
+        $db->query("SELECT RELEASE_LOCK(" . $db->escape($lockName) . ")");
 
         return $this->respond([
             'success' => true,
@@ -571,6 +583,7 @@ class ExamController extends BaseController
             $qId = (string) $q['id'];
             $selected = $submitted[$qId] ?? '';
             $points = (float) $q['points'];
+            $correct = trim((string) ($q['correct_answer'] ?? ''));
             if (($q['type'] ?? 'choice') === 'writing') {
                 $detailedAnswers[] = [
                     'questionId' => $qId,
@@ -578,14 +591,13 @@ class ExamController extends BaseController
                     'type' => 'writing',
                     'points' => $points,
                     'selected' => $selected,
-                    'correct' => '',
+                    'correct' => $correct,
                     'isCorrect' => 'รอตรวจ',
                     'aiFeedback' => $selected === '' ? 'ไม่ได้ตอบคำถาม' : 'รอครูผู้สอนตรวจให้คะแนน',
                 ];
                 continue;
             }
 
-            $correct = trim((string) ($q['correct_answer'] ?? ''));
             $isCorrect = $selected !== '' && strcasecmp($selected, $correct) === 0;
             if ($isCorrect) {
                 $score += $points;
@@ -624,7 +636,25 @@ class ExamController extends BaseController
         }
 
         $attemptNumber = (int) ($attempt['attempt_number'] ?? ($attempts + 1));
-        $resultModel->insert([
+
+        // Atomically claim this attempt before creating the result. This prevents duplicate submits.
+        $db = db_connect();
+        $db->transBegin();
+        $submittedAt = date('Y-m-d H:i:s');
+        $claimed = $db->table('exam_attempts')
+            ->where('id', $attempt['id'])
+            ->where('status', 'in_progress')
+            ->update([
+                'status' => 'submitted',
+                'submitted_at' => $submittedAt,
+                'updated_at' => $submittedAt,
+            ]);
+        if ($claimed !== true || $db->affectedRows() !== 1) {
+            $db->transRollback();
+            return $this->respond(['success' => false, 'message' => 'ข้อสอบชุดนี้ถูกส่งไปแล้วหรือกำลังประมวลผล'], 409);
+        }
+
+        if (!$resultModel->insert([
             'exam_id' => $examId,
             'email' => $email,
             'name' => $this->session->get('student_name'),
@@ -643,13 +673,17 @@ class ExamController extends BaseController
             'cheating_reason' => $cheatingCount > 0 ? 'TAB_SWITCH_ATTEMPT' : null,
             'answers_json' => json_encode($detailedAnswers, JSON_UNESCAPED_UNICODE),
             'exam_round' => $exam['exam_round'] ?? '1',
-        ]);
+        ])) {
+            $db->transRollback();
+            return $this->respond(['success' => false, 'message' => 'ไม่สามารถบันทึกผลสอบได้ กรุณาลองใหม่'], 500);
+        }
 
-        $attemptModel->update($attempt['id'], [
-            'status' => 'submitted',
-            'submitted_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        if (!$db->transStatus()) {
+            $db->transRollback();
+            return $this->respond(['success' => false, 'message' => 'ไม่สามารถยืนยันผลสอบได้ กรุณาลองใหม่'], 500);
+        }
+        $db->transCommit();
+
         $this->session->remove('student_attempt_id');
 
         return $this->respond([
@@ -680,6 +714,9 @@ class ExamController extends BaseController
             $attempt = $attemptModel->where('exam_id', $examId)->where('student_email', $email)
                 ->where('status', 'in_progress')->orderBy('started_at', 'DESC')->first();
         }
+        if (!$attempt || ($attempt['exam_id'] ?? '') !== $examId || strtolower((string) ($attempt['student_email'] ?? '')) !== $email || ($attempt['status'] ?? '') !== 'in_progress') {
+            return $this->respond(['success' => false, 'message' => 'ไม่พบรอบการสอบที่กำลังทำอยู่'], 409);
+        }
 
         $resultModel = new ExamResultModel();
         $attempts = $resultModel->where('email', $email)->where('exam_id', $examId)->countAllResults();
@@ -690,7 +727,23 @@ class ExamController extends BaseController
         $timeSpent = 0;
         if ($attempt && !empty($attempt['started_at'])) $timeSpent = max(0, time() - strtotime($attempt['started_at']));
 
-        $resultModel->insert([
+        $db = db_connect();
+        $db->transBegin();
+        $submittedAt = date('Y-m-d H:i:s');
+        $claimed = $db->table('exam_attempts')
+            ->where('id', $attempt['id'])
+            ->where('status', 'in_progress')
+            ->update([
+                'status' => 'cheated',
+                'submitted_at' => $submittedAt,
+                'updated_at' => $submittedAt,
+            ]);
+        if ($claimed !== true || $db->affectedRows() !== 1) {
+            $db->transRollback();
+            return $this->respond(['success' => false, 'message' => 'รอบการสอบนี้ถูกปิดไปแล้วหรือกำลังประมวลผล'], 409);
+        }
+
+        if (!$resultModel->insert([
             'exam_id' => $examId,
             'email' => $email,
             'name' => $this->session->get('student_name'),
@@ -711,15 +764,17 @@ class ExamController extends BaseController
             'cheating_reason' => $reason,
             'answers_json' => json_encode([], JSON_UNESCAPED_UNICODE),
             'exam_round' => $exam['exam_round'] ?? '1',
-        ]);
-
-        if ($attempt) {
-            $attemptModel->update($attempt['id'], [
-                'status' => 'cheated',
-                'submitted_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s'),
-            ]);
+        ])) {
+            $db->transRollback();
+            return $this->respond(['success' => false, 'message' => 'ไม่สามารถบันทึกผลการตรวจจับได้ กรุณาลองใหม่'], 500);
         }
+
+        if (!$db->transStatus()) {
+            $db->transRollback();
+            return $this->respond(['success' => false, 'message' => 'ไม่สามารถยืนยันผลการตรวจจับได้ กรุณาลองใหม่'], 500);
+        }
+        $db->transCommit();
+
         $this->session->remove('student_attempt_id');
 
         return $this->respond(['success' => true, 'message' => 'บันทึกการโกงเรียบร้อย คะแนนสอบเป็น 0']);

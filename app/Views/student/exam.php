@@ -261,6 +261,31 @@
       border: 1px solid rgba(255, 255, 255, 0.03);
     }
 
+    /* Submission state must remain visibly active even while the button is disabled. */
+    .btn-submit.is-processing {
+      background: linear-gradient(135deg, #059669, #047857) !important;
+      color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.16) !important;
+      opacity: 1 !important;
+      cursor: wait !important;
+      box-shadow: 0 8px 28px rgba(16, 185, 129, 0.28) !important;
+    }
+
+    .submit-spinner {
+      width: 1.05rem;
+      height: 1.05rem;
+      border: 3px solid rgba(255, 255, 255, 0.28);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      display: inline-block;
+      animation: submitSpinner 0.75s linear infinite;
+      flex: 0 0 auto;
+    }
+
+    @keyframes submitSpinner {
+      to { transform: rotate(360deg); }
+    }
+
     .hidden { display: none !important; }
 
     /* ===== Image Overlay ===== */
@@ -1563,6 +1588,8 @@
     var answeredQuestions = [];
     var timerInterval;
     var startTime;
+    var serverAttemptStartedAt = <?= !empty($attemptStartedAt ?? null) ? json_encode($attemptStartedAt) : 'null' ?>;
+    var serverAttemptStartedMs = serverAttemptStartedAt ? Date.parse(serverAttemptStartedAt.replace(' ', 'T') + '<?= date_default_timezone_get() === 'Asia/Bangkok' ? '+07:00' : '' ?>') : 0;
     var isExamActive = false;
     var cheatingCount = 0;
     var cheatingFlag = '';
@@ -1623,7 +1650,7 @@
     document.addEventListener('keydown', autoFullscreenHandler);
 
     function startExamMode() {
-        startTime = new Date();
+        startTime = serverAttemptStartedMs > 0 ? new Date(serverAttemptStartedMs) : new Date();
         isExamActive = true;
         studentAnswers = [];
         answeredQuestions = [];
@@ -2282,8 +2309,10 @@
     }
 
     // ===== Submit =====
-    document.getElementById('submitExamBtn').onclick = () => {
-        Swal.fire({
+    document.getElementById('submitExamBtn').onclick = async () => {
+        if (isSubmitting) return;
+
+        const result = await Swal.fire({
             title: 'ต้องการส่งข้อสอบ?',
             text: "เมื่อส่งแล้วจะไม่สามารถกลับมาแก้ไขได้อีก",
             icon: 'question',
@@ -2291,13 +2320,14 @@
             confirmButtonColor: '#10b981',
             cancelButtonColor: '#64748b',
             confirmButtonText: 'ใช่, ส่งข้อสอบ',
-            cancelButtonText: 'ยกเลิก'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                collectAnswer();
-                finishExam();
-            }
+            cancelButtonText: 'ยกเลิก',
+            allowOutsideClick: false
         });
+
+        if (result.isConfirmed) {
+            collectAnswer();
+            finishExam();
+        }
     };
 
     function initOverallTimer() {
@@ -2351,6 +2381,15 @@
         if (isSubmitting) return;
         isSubmitting = true;
         isExamActive = false;
+
+        // Lock the submit UI immediately so students always get visible feedback
+        // while the server is processing the submission.
+        const submitBtn = document.getElementById('submitExamBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('is-processing');
+            submitBtn.innerHTML = '<span class="submit-spinner" aria-hidden="true"></span> กำลังส่งข้อสอบ...';
+        }
         clearInterval(timerInterval);
         clearInterval(overallTimerInterval);
         clearInterval(statusInterval);
@@ -2359,7 +2398,7 @@
         if (visibilityHandler) document.removeEventListener('visibilitychange', visibilityHandler);
         if (keydownBlocker) window.removeEventListener('keydown', keydownBlocker, true);
 
-        var totalTime = Math.floor((new Date() - startTime) / 1000);
+        var totalTime = startTime ? Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000)) : 0;
 
         Swal.fire({ title: 'กำลังส่งคำตอบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
@@ -2396,7 +2435,7 @@
         if (visibilityHandler) document.removeEventListener('visibilitychange', visibilityHandler);
         if (keydownBlocker) window.removeEventListener('keydown', keydownBlocker, true);
 
-        var totalTime = Math.floor((new Date() - startTime) / 1000);
+        var totalTime = startTime ? Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000)) : 0;
 
         Swal.fire({ title: 'กำลังบันทึกพฤติกรรมโกง...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 

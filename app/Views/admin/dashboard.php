@@ -4490,6 +4490,27 @@
       }
 
       const answers = JSON.parse(record.answers_json || '[]');
+
+      // Older results may have saved the writing reference answer as blank.
+      // Reload the question bank so the grading modal always shows the reference answer.
+      try {
+        const qResponse = await fetch(`/api/teacher/questions?exam_id=${encodeURIComponent(record.exam_id || activeExamId)}`);
+        const qRes = await qResponse.json();
+        if (qRes.success && Array.isArray(qRes.questions)) {
+          const questionMap = new Map(qRes.questions.map(q => [String(q.id), q]));
+          answers.forEach(a => {
+            if (a.type === 'writing' && (!a.correct || !String(a.correct).trim())) {
+              const sourceQuestion = questionMap.get(String(a.questionId));
+              if (sourceQuestion && sourceQuestion.correct_answer != null) {
+                a.correct = String(sourceQuestion.correct_answer);
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('ไม่สามารถโหลดเฉลยอ้างอิงจากคลังข้อสอบ:', e);
+      }
+
       const writingAnswers = answers.filter(a => a.type === 'writing');
 
       let contentHtml = '';
