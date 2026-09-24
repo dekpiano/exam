@@ -143,10 +143,27 @@
     }
 
     .active-tab {
-      background: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(14, 165, 233, 0.15));
-      border-left: 4px solid #ec4899;
-      color: #ec4899;
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.28), rgba(14, 165, 233, 0.20)) !important;
+      border-left: 4px solid #ec4899 !important;
+      color: #ffffff !important;
+      box-shadow: inset 0 0 0 1px rgba(236, 72, 153, 0.15), 0 8px 20px rgba(236, 72, 153, 0.10);
+      transform: translateX(2px);
     }
+
+    .active-tab::after {
+      content: '✓';
+      margin-left: auto;
+      color: #f9a8d4;
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .monitor-choice-active {
+      position: relative;
+      outline: 2px solid rgba(255, 255, 255, 0.22);
+      outline-offset: 1px;
+    }
+
 
     ::-webkit-scrollbar {
       width: 6px;
@@ -306,6 +323,10 @@
             <a href="/teacher/questions?exam_id=<?= esc($activeExamId) ?>" id="tab-btn-questions"
               class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm text-slate-350 hover:bg-white/5 transition-all flex items-center gap-2">
               📝 คลังข้อสอบรายวิชา
+            </a>
+            <a href="/teacher/monitor?exam_id=<?= esc($activeExamId) ?>" id="tab-btn-monitor"
+              class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm text-slate-300 hover:bg-white/5 transition-all flex items-center gap-2">
+              🖥️ จอภาพควบคุม (Lobby)
             </a>
             <a href="/teacher/results?exam_id=<?= esc($activeExamId) ?>" id="tab-btn-results"
               class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm text-slate-300 hover:bg-white/5 transition-all flex items-center gap-2">
@@ -937,7 +958,7 @@
                 <div>
                   <label class="block text-xs font-bold text-slate-400 uppercase mb-2">รหัสผ่านผู้ดูแลระบบสำรอง (Admin
                     Password)</label>
-                  <input type="text" name="Admin Password"
+                  <input type="password" name="Admin Password"
                     class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white font-bold outline-none focus:border-sky-400 transition-colors"
                     required>
                 </div>
@@ -3554,22 +3575,23 @@
         const badgeEl = document.getElementById('monitor-status-badge');
 
 
-        if (res.join_policy) {
-          updateJoinPolicyUI(res.join_policy);
-        }
+        // API ใช้ camelCase: joinPolicy / examMode / examStatus
+        // ต้องใช้ค่าจากฐานข้อมูลทุกครั้ง เพื่อให้รีเฟรชแล้วยังแสดงค่าที่เลือกอยู่
+        const currentJoinPolicy = res.joinPolicy || res.join_policy || 'anytime';
+        const currentExamMode = res.examMode || res.exam_mode || 'classic';
+        const currentExamStatus = res.examStatus || res.exam_status || 'Waiting';
 
-        if (res.exam_mode) {
-          updateExamModeUI(res.exam_mode);
-        }
+        updateJoinPolicyUI(currentJoinPolicy);
+        updateExamModeUI(currentExamMode);
 
-        if (badgeEl && res.exam_status) {
-          if (res.exam_status === 'Waiting') {
+        if (badgeEl && currentExamStatus) {
+          if (currentExamStatus === 'Waiting') {
             badgeEl.className = "px-3.5 py-1.5 text-xs font-black rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm";
             badgeEl.textContent = "⏳ ห้องรอสอบ (พักคอย)";
-          } else if (res.exam_status === 'Started') {
+          } else if (currentExamStatus === 'Started') {
             badgeEl.className = "px-3.5 py-1.5 text-xs font-black rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse shadow-sm";
             badgeEl.textContent = "🚀 กำลังสอบอยู่ (Exam Started)";
-          } else if (res.exam_status === 'Finished') {
+          } else if (currentExamStatus === 'Finished') {
             badgeEl.className = "px-3.5 py-1.5 text-xs font-black rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 shadow-sm";
             badgeEl.textContent = "🛑 ปิดระบบสอบแล้ว (Finished)";
           }
@@ -3585,17 +3607,20 @@
           btnStarted.className = "w-full py-4 px-6 rounded-2xl text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]";
           btnFinished.className = "w-full py-4 px-6 rounded-2xl text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]";
           btnWaiting.className = "w-full py-4 px-6 rounded-2xl text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]";
+          btnStarted.classList.remove('monitor-choice-active');
+          btnFinished.classList.remove('monitor-choice-active');
+          btnWaiting.classList.remove('monitor-choice-active');
 
-          if (res.exam_status === 'Started') {
-            btnStarted.classList.add("bg-gradient-to-r", "from-emerald-500", "to-teal-500", "text-white", "shadow-lg", "shadow-emerald-500/30");
+          if (currentExamStatus === 'Started') {
+            btnStarted.classList.add("bg-gradient-to-r", "from-emerald-500", "to-teal-500", "text-white", "shadow-lg", "shadow-emerald-500/30", "monitor-choice-active");
             btnFinished.classList.add("bg-white/5", "text-red-450/40", "border", "border-white/5", "opacity-40", "hover:opacity-90");
             btnWaiting.classList.add("bg-white/5", "text-amber-450/40", "border", "border-white/5", "opacity-40", "hover:opacity-90");
-          } else if (res.exam_status === 'Finished') {
-            btnFinished.classList.add("bg-gradient-to-r", "from-red-500", "to-rose-600", "text-white", "shadow-lg", "shadow-red-500/25");
+          } else if (currentExamStatus === 'Finished') {
+            btnFinished.classList.add("bg-gradient-to-r", "from-red-500", "to-rose-600", "text-white", "shadow-lg", "shadow-red-500/25", "monitor-choice-active");
             btnStarted.classList.add("bg-white/5", "text-emerald-450/40", "border", "border-white/5", "opacity-40", "hover:opacity-90");
             btnWaiting.classList.add("bg-white/5", "text-amber-450/40", "border", "border-white/5", "opacity-40", "hover:opacity-90");
           } else { // Waiting
-            btnWaiting.classList.add("bg-gradient-to-r", "from-amber-500", "to-orange-500", "text-white", "shadow-lg", "shadow-amber-500/30");
+            btnWaiting.classList.add("bg-gradient-to-r", "from-amber-500", "to-orange-500", "text-white", "shadow-lg", "shadow-amber-500/30", "monitor-choice-active");
             btnStarted.classList.add("bg-white/5", "text-emerald-450/40", "border", "border-white/5", "opacity-40", "hover:opacity-90");
             btnFinished.classList.add("bg-white/5", "text-red-450/40", "border", "border-white/5", "opacity-40", "hover:opacity-90");
           }
@@ -3692,10 +3717,10 @@
       if (!btnAnytime || !btnLobby) return;
 
       if (policy === 'lobby_first') {
-        btnLobby.className = "w-full py-3.5 px-5 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-pink-500/20 shadow-lg shadow-pink-500/10 scale-[1.01]";
+        btnLobby.className = "w-full py-3.5 px-5 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-pink-500/20 shadow-lg shadow-pink-500/10 scale-[1.01] monitor-choice-active";
         btnAnytime.className = "w-full py-3.5 px-5 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer opacity-50 hover:opacity-90";
       } else {
-        btnAnytime.className = "w-full py-3.5 px-5 bg-gradient-to-r from-sky-500 to-blue-500 text-white font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-sky-500/20 shadow-lg shadow-sky-500/10 scale-[1.01]";
+        btnAnytime.className = "w-full py-3.5 px-5 bg-gradient-to-r from-sky-500 to-blue-500 text-white font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-sky-500/20 shadow-lg shadow-sky-500/10 scale-[1.01] monitor-choice-active";
         btnLobby.className = "w-full py-3.5 px-5 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer opacity-50 hover:opacity-90";
       }
     }
@@ -3749,10 +3774,10 @@
       if (!btnClassic || !btnPokemon) return;
 
       if (mode === 'pokemon') {
-        btnPokemon.className = "w-full py-3.5 px-4 bg-gradient-to-r from-amber-500/30 via-red-500/25 to-purple-500/30 text-amber-200 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-amber-500/50 shadow-lg shadow-amber-500/20 scale-[1.01]";
+        btnPokemon.className = "w-full py-3.5 px-4 bg-gradient-to-r from-amber-500/30 via-red-500/25 to-purple-500/30 text-amber-200 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-amber-500/50 shadow-lg shadow-amber-500/20 scale-[1.01] monitor-choice-active";
         btnClassic.className = "w-full py-3.5 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer opacity-50 hover:opacity-90";
       } else {
-        btnClassic.className = "w-full py-3.5 px-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-sky-500/30 shadow-lg shadow-sky-500/20 scale-[1.01]";
+        btnClassic.className = "w-full py-3.5 px-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-sky-500/30 shadow-lg shadow-sky-500/20 scale-[1.01] monitor-choice-active";
         btnPokemon.className = "w-full py-3.5 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer opacity-50 hover:opacity-90";
       }
     }

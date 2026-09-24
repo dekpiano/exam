@@ -13,6 +13,7 @@ class CreateExamAttempts extends Migration
             'exam_id' => ['type' => 'VARCHAR', 'constraint' => 36],
             'student_email' => ['type' => 'VARCHAR', 'constraint' => 255],
             'exam_round' => ['type' => 'VARCHAR', 'constraint' => 100, 'default' => '1'],
+            'attempt_number' => ['type' => 'INT', 'default' => 1],
             'status' => ['type' => 'VARCHAR', 'constraint' => 20, 'default' => 'in_progress'],
             'questions_json' => ['type' => 'LONGTEXT'],
             'started_at' => ['type' => 'DATETIME'],

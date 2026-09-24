@@ -187,9 +187,12 @@
           }
         }
 
-        $passPercentVal = $passPercent ?? 50;
-        $passCriteria = $part1Total * ($passPercentVal / 100);
-        $isPassed = ($part1Score >= $passCriteria);
+        $passPercentVal = (float) ($passPercent ?? 50);
+        // Passing is calculated from the objective section only.
+        // Do not mark an exam with zero objective points as passed automatically.
+        $isPassed = $part1Total > 0
+          ? ($part1Score >= ($part1Total * ($passPercentVal / 100)))
+          : false;
 
         $isDisqualified = ($cheatingFlag === 'YES');
       } else {

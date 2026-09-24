@@ -85,37 +85,29 @@ class ExamController extends BaseController
 
         $examModel = new ExamModel();
         $exam = $examModel->find($examId);
-        if (!$exam) {
-            return redirect()->to('/');
-        }
-
-        // If exam is in Waiting status, redirect to lobby
-        if ($exam['exam_status'] === 'Waiting') {
-            return redirect()->to('/lobby');
-        }
-
-        // If exam is Finished, redirect to index
-        if ($exam['exam_status'] === 'Finished') {
-            return redirect()->to('/');
-        }
+        if (!$exam) return redirect()->to('/');
+        if ($exam['exam_status'] === 'Waiting') return redirect()->to('/lobby');
+        if ($exam['exam_status'] === 'Finished') return redirect()->to('/');
 
         $resultModel = new ExamResultModel();
         $attempts = $resultModel->where('email', $email)->where('exam_id', $examId)->countAllResults();
-        $maxAttempts = (int) $exam['max_attempts'];
-
-        if ($attempts >= $maxAttempts) {
-            return redirect()->to('/result');
-        }
+        $maxAttempts = max(1, (int) $exam['max_attempts']);
+        if ($attempts >= $maxAttempts) return redirect()->to('/result');
 
         $remainingSeconds = 0;
-        if ((int) $exam['exam_duration'] > 0) {
+        $attemptModel = new \App\Models\ExamAttemptModel();
+        $attempt = $attemptModel->where('exam_id', $examId)->where('student_email', $email)
+            ->where('status', 'in_progress')->orderBy('started_at', 'DESC')->first();
+        if ($attempt) {
+            $this->session->set('student_attempt_id', $attempt['id']);
+        }
+
+        if ((int) ($exam['exam_duration'] ?? 0) > 0) {
             $durationSeconds = (int) $exam['exam_duration'] * 60;
-            if (!empty($exam['started_at'])) {
-                $elapsedSeconds = time() - strtotime($exam['started_at']);
-                $remainingSeconds = $durationSeconds - $elapsedSeconds;
-                if ($remainingSeconds <= 0) {
-                    return redirect()->to('/result');
-                }
+            $startAt = $attempt['started_at'] ?? null;
+            if ($startAt) {
+                $remainingSeconds = max(0, $durationSeconds - (time() - strtotime($startAt)));
+                if ($remainingSeconds <= 0) return redirect()->to('/result');
             } else {
                 $remainingSeconds = $durationSeconds;
             }
@@ -123,8 +115,7 @@ class ExamController extends BaseController
 
         $settingModel = new SettingModel();
         $settings = $settingModel->getSettings();
-
-        $data = [
+        return view('student/exam', [
             'studentName' => $this->session->get('student_name'),
             'studentEmail' => $email,
             'studentId' => $this->session->get('student_number'),
@@ -142,9 +133,7 @@ class ExamController extends BaseController
             'antiCheating' => isset($exam['anti_cheating']) ? (int) $exam['anti_cheating'] : 1,
             'examId' => $examId,
             'examMode' => $exam['exam_mode'] ?? 'classic',
-        ];
-
-        return view('student/exam', $data);
+        ]);
     }
 
     public function result()
@@ -258,7 +247,7 @@ class ExamController extends BaseController
         }
 
         // Register student or update details for this exam
-        $existing = $studentModel->where('email', $email)->first();
+        $existing = $studentModel->where('email', $email)->where('exam_id', $examId)->first();
         if ($existing) {
             $studentModel->update($existing['id'], [
                 'exam_id' => $examId,
@@ -387,8 +376,8 @@ class ExamController extends BaseController
 
     public function startExam()
     {
-        $email = $this->session->get('student_email');
-        $examId = $this->session->get('student_exam_id');
+        $email = strtolower(trim((string) $this->session->get('student_email')));
+        $examId = (string) $this->session->get('student_exam_id');
         if (!$email || !$examId) {
             return $this->respond(['success' => false, 'message' => 'Unauthorized'], 401);
         }
@@ -398,66 +387,124 @@ class ExamController extends BaseController
         if (!$exam) {
             return $this->respond(['success' => false, 'message' => 'Exam not found'], 404);
         }
+        if (($exam['exam_status'] ?? '') !== 'Started') {
+            return $this->respond(['success' => false, 'message' => 'ขณะนี้ยังไม่เปิดให้เริ่มทำข้อสอบ'], 409);
+        }
 
         $resultModel = new ExamResultModel();
         $attempts = $resultModel->where('email', $email)->where('exam_id', $examId)->countAllResults();
-        $maxAttempts = (int) $exam['max_attempts'];
-
+        $maxAttempts = max(1, (int) $exam['max_attempts']);
         if ($attempts >= $maxAttempts) {
             return $this->respond(['success' => false, 'message' => 'คุณส่งข้อสอบชุดนี้ไปแล้ว'], 400);
+        }
+        $attemptNumber = $attempts + 1;
+
+        $attemptModel = new \App\Models\ExamAttemptModel();
+        $attempt = $attemptModel->where('exam_id', $examId)
+            ->where('student_email', $email)
+            ->where('status', 'in_progress')
+            ->orderBy('started_at', 'DESC')
+            ->first();
+
+        if ($attempt) {
+            $snapshot = json_decode($attempt['questions_json'] ?? '', true);
+            if (is_array($snapshot) && !empty($snapshot)) {
+                $this->session->set('student_attempt_id', $attempt['id']);
+                return $this->respond([
+                    'success' => true,
+                    'attempt_id' => $attempt['id'],
+                    'questions' => $this->buildClientQuestions($snapshot)
+                ]);
+            }
+            $attemptModel->update($attempt['id'], ['status' => 'abandoned', 'updated_at' => date('Y-m-d H:i:s')]);
         }
 
         $questionModel = new QuestionModel();
         $allQuestions = $questionModel->where('exam_id', $examId)->findAll();
-
-        // Separate choice and writing questions
         $choices = [];
         $writings = [];
-
         foreach ($allQuestions as $q) {
-            if ($q['type'] === 'writing') {
+            if (($q['type'] ?? 'choice') === 'writing') {
                 $writings[] = $q;
             } else {
                 $choices[] = $q;
             }
         }
 
-        // Shuffle choices and slice to standard count
         shuffle($choices);
-        $numQuestionsLimit = (int) $exam['num_questions'];
-        $selectedChoices = array_slice($choices, 0, $numQuestionsLimit);
-
-        // Shuffle writings
+        $selectedChoices = array_slice($choices, 0, max(0, (int) $exam['num_questions']));
         shuffle($writings);
-
-        // Combine
         $selectedQuestions = array_merge($selectedChoices, $writings);
+        if (empty($selectedQuestions)) {
+            return $this->respond(['success' => false, 'message' => 'รายวิชานี้ยังไม่มีข้อสอบ'], 422);
+        }
 
-        $clientQuestions = [];
+        // Persist the exact question set, option order, correct answers and points on the server.
+        // This snapshot is never sent to the browser in full.
+        $snapshot = [];
         foreach ($selectedQuestions as $q) {
             $options = [];
-            if ($q['type'] === 'choice') {
-                $options = [$q['option_a'], $q['option_b'], $q['option_c'], $q['option_d']];
+            if (($q['type'] ?? 'choice') === 'choice') {
+                $options = [$q['option_a'] ?? '', $q['option_b'] ?? '', $q['option_c'] ?? '', $q['option_d'] ?? ''];
+                $options = array_values(array_filter($options, static fn($v) => $v !== null && $v !== ''));
                 shuffle($options);
             }
-
-            $clientQuestions[] = [
+            $snapshot[] = [
                 'id' => $q['id'],
                 'question' => $q['question_text'],
                 'options' => $options,
                 'type' => $q['type'],
                 'points' => (float) $q['points'],
+                'correct_answer' => (string) ($q['correct_answer'] ?? ''),
                 'image_url' => $q['image_url'] ?? '',
             ];
         }
 
-        return $this->respond(['success' => true, 'questions' => $clientQuestions]);
+        $attemptId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
+        $startedAt = date('Y-m-d H:i:s');
+        $attemptModel->insert([
+            'id' => $attemptId,
+            'exam_id' => $examId,
+            'student_email' => $email,
+            'exam_round' => $exam['exam_round'] ?? '1',
+            'attempt_number' => $attemptNumber,
+            'status' => 'in_progress',
+            'questions_json' => json_encode($snapshot, JSON_UNESCAPED_UNICODE),
+            'started_at' => $startedAt,
+            'updated_at' => $startedAt,
+        ]);
+        $this->session->set('student_attempt_id', $attemptId);
+
+        return $this->respond([
+            'success' => true,
+            'attempt_id' => $attemptId,
+            'questions' => $this->buildClientQuestions($snapshot)
+        ]);
+    }
+
+
+    private function buildClientQuestions(array $snapshot): array
+    {
+        return array_map(static function (array $q): array {
+            return [
+                'id' => $q['id'],
+                'question' => $q['question'],
+                'options' => $q['options'] ?? [],
+                'type' => $q['type'],
+                'points' => (float) $q['points'],
+                'image_url' => $q['image_url'] ?? '',
+            ];
+        }, $snapshot);
     }
 
     public function submitExam()
     {
-        $email = $this->session->get('student_email');
-        $examId = $this->session->get('student_exam_id');
+        $email = strtolower(trim((string) $this->session->get('student_email')));
+        $examId = (string) $this->session->get('student_exam_id');
         if (!$email || !$examId) {
             return $this->respond(['success' => false, 'message' => 'Unauthorized'], 401);
         }
@@ -467,95 +514,116 @@ class ExamController extends BaseController
         if (!$exam) {
             return $this->respond(['success' => false, 'message' => 'Exam not found'], 404);
         }
+        if (($exam['exam_status'] ?? '') !== 'Started') {
+            return $this->respond(['success' => false, 'message' => 'การสอบนี้ไม่ได้อยู่ในสถานะเปิดสอบ'], 409);
+        }
 
-        $answers = $this->request->getPost('answers'); // JSON String or Array
+        $attemptModel = new \App\Models\ExamAttemptModel();
+        $attemptId = (string) ($this->session->get('student_attempt_id') ?? '');
+        $attempt = $attemptId !== '' ? $attemptModel->find($attemptId) : null;
+        if (!$attempt || $attempt['exam_id'] !== $examId || strtolower($attempt['student_email']) !== $email || $attempt['status'] !== 'in_progress') {
+            $attempt = $attemptModel->where('exam_id', $examId)->where('student_email', $email)
+                ->where('status', 'in_progress')->orderBy('started_at', 'DESC')->first();
+        }
+        if (!$attempt) {
+            return $this->respond(['success' => false, 'message' => 'ไม่พบรอบการสอบที่กำลังทำอยู่ กรุณาเริ่มสอบใหม่'], 409);
+        }
+
+        $snapshot = json_decode($attempt['questions_json'] ?? '', true);
+        if (!is_array($snapshot) || empty($snapshot)) {
+            return $this->respond(['success' => false, 'message' => 'ข้อมูลชุดข้อสอบไม่สมบูรณ์'], 500);
+        }
+
+        $answers = $this->request->getPost('answers');
         if (is_string($answers)) {
             $answers = json_decode($answers, true);
         }
-        $timeSpent = (int) $this->request->getPost('totalTimeSpent');
+        if (!is_array($answers)) {
+            $answers = [];
+        }
 
-        // Count cheating strikes from server-side logs instead of trusting client input
+        $snapshotMap = [];
+        $totalQuestions = 0.0;
+        foreach ($snapshot as $q) {
+            $snapshotMap[(string) $q['id']] = $q;
+            $totalQuestions += (float) $q['points'];
+        }
+
+        // Only accept answers belonging to the server-side snapshot; reject duplicates/tampering.
+        $submitted = [];
+        foreach ($answers as $ans) {
+            if (!is_array($ans) || empty($ans['questionId'])) {
+                continue;
+            }
+            $qId = (string) $ans['questionId'];
+            if (!isset($snapshotMap[$qId])) {
+                return $this->respond(['success' => false, 'message' => 'พบข้อมูลคำตอบที่ไม่ตรงกับชุดข้อสอบ'], 400);
+            }
+            if (isset($submitted[$qId])) {
+                return $this->respond(['success' => false, 'message' => 'พบคำตอบซ้ำในชุดข้อสอบ'], 400);
+            }
+            $submitted[$qId] = trim((string) ($ans['selectedOption'] ?? ''));
+        }
+
+        $score = 0.0;
+        $detailedAnswers = [];
+        foreach ($snapshot as $q) {
+            $qId = (string) $q['id'];
+            $selected = $submitted[$qId] ?? '';
+            $points = (float) $q['points'];
+            if (($q['type'] ?? 'choice') === 'writing') {
+                $detailedAnswers[] = [
+                    'questionId' => $qId,
+                    'question' => $q['question'],
+                    'type' => 'writing',
+                    'points' => $points,
+                    'selected' => $selected,
+                    'correct' => '',
+                    'isCorrect' => 'รอตรวจ',
+                    'aiFeedback' => $selected === '' ? 'ไม่ได้ตอบคำถาม' : 'รอครูผู้สอนตรวจให้คะแนน',
+                ];
+                continue;
+            }
+
+            $correct = trim((string) ($q['correct_answer'] ?? ''));
+            $isCorrect = $selected !== '' && strcasecmp($selected, $correct) === 0;
+            if ($isCorrect) {
+                $score += $points;
+            }
+            $detailedAnswers[] = [
+                'questionId' => $qId,
+                'question' => $q['question'],
+                'type' => 'choice',
+                'points' => $points,
+                'selected' => $selected,
+                'correct' => $correct,
+                'isCorrect' => $isCorrect ? 'ถูกต้อง' : 'ผิด',
+                'aiFeedback' => '',
+            ];
+        }
+
         $errorLogModel = new ErrorLogModel();
         $cheatingCount = $errorLogModel->where('student_email', $email)
-            ->where('exam_id', $examId)
-            ->where('error_type', 'SUSPICIOUS_ACTIVITY')
-            ->countAllResults();
-        $maxStrikes = isset($exam['max_strikes']) && (int) $exam['max_strikes'] > 0
-            ? (int) $exam['max_strikes']
-            : 3;
-        $cheatingFlag = ($cheatingCount >= $maxStrikes) ? 'YES' : 'NO';
+            ->where('exam_id', $examId)->where('error_type', 'SUSPICIOUS_ACTIVITY')->countAllResults();
+        $maxStrikes = (int) ($exam['max_strikes'] ?? 3);
+        $maxStrikes = $maxStrikes > 0 ? $maxStrikes : 3;
+        $cheatingFlag = $cheatingCount >= $maxStrikes ? 'YES' : 'NO';
 
         $resultModel = new ExamResultModel();
-        
         $attempts = $resultModel->where('email', $email)->where('exam_id', $examId)->countAllResults();
-        $maxAttempts = (int) $exam['max_attempts'];
-        
+        $maxAttempts = max(1, (int) $exam['max_attempts']);
         if ($attempts >= $maxAttempts) {
             return $this->respond(['success' => false, 'message' => 'คุณส่งข้อสอบครบตามสิทธิ์ที่กำหนดแล้ว'], 400);
         }
-        
-        $attemptNumber = $attempts + 1;
 
-        $questionModel = new QuestionModel();
-
-        $score = 0;
-        $totalQuestions = 0;
-        $detailedAnswers = [];
-
-        foreach ($answers as $ans) {
-            $qId = $ans['questionId'];
-            $selected = trim($ans['selectedOption'] ?? '');
-
-            $q = $questionModel->find($qId);
-            if (!$q)
-                continue;
-
-            $totalQuestions += (float) $q['points'];
-            $isCorrect = false;
-            $aiFeedback = '';
-
-            if ($q['type'] === 'writing') {
-                $writingEarned = null; // null = not graded
-                $aiFeedback = '';
-
-                if (empty($selected)) {
-                    $aiFeedback = 'ไม่ได้ตอบคำถาม';
-                } else {
-                    $aiFeedback = 'รอครูผู้สอนตรวจให้คะแนน';
-                }
-
-                $detailedAnswers[] = [
-                    'questionId' => $qId,
-                    'question' => $q['question_text'],
-                    'type' => $q['type'],
-                    'points' => (float) $q['points'],
-                    'selected' => $selected,
-                    'correct' => $q['correct_answer'],
-                    'isCorrect' => 'รอตรวจ',
-                    'aiFeedback' => $aiFeedback,
-                ];
-            } else {
-                $sel = trim($selected);
-                $corr = trim($q['correct_answer']);
-                $isCorrect = (strcasecmp($sel, $corr) === 0);
-
-                if ($isCorrect) {
-                    $score += (float) $q['points'];
-                }
-
-                $detailedAnswers[] = [
-                    'questionId' => $qId,
-                    'question' => $q['question_text'],
-                    'type' => $q['type'],
-                    'points' => (float) $q['points'],
-                    'selected' => $selected,
-                    'correct' => $q['correct_answer'],
-                    'isCorrect' => $isCorrect ? 'ถูกต้อง' : 'ผิด',
-                    'aiFeedback' => $aiFeedback,
-                ];
-            }
+        $startedTs = strtotime((string) $attempt['started_at']);
+        $serverTimeSpent = $startedTs ? max(0, time() - $startedTs) : (int) $this->request->getPost('totalTimeSpent');
+        $examDurationSeconds = (int) ($exam['exam_duration'] ?? 0) * 60;
+        if ($examDurationSeconds > 0) {
+            $serverTimeSpent = min($serverTimeSpent, $examDurationSeconds);
         }
 
+        $attemptNumber = (int) ($attempt['attempt_number'] ?? ($attempts + 1));
         $resultModel->insert([
             'exam_id' => $examId,
             'email' => $email,
@@ -568,53 +636,59 @@ class ExamController extends BaseController
             'semester' => $exam['semester'] ?? '',
             'score' => $score,
             'total_questions' => $totalQuestions,
-            'total_time_spent' => $timeSpent,
+            'total_time_spent' => $serverTimeSpent,
             'attempt_number' => $attemptNumber,
             'cheating_flag' => $cheatingFlag,
             'cheating_count' => $cheatingCount,
-            'cheating_reason' => $cheatingCount > 0 ? "TAB_SWITCH_ATTEMPT" : NULL,
+            'cheating_reason' => $cheatingCount > 0 ? 'TAB_SWITCH_ATTEMPT' : null,
             'answers_json' => json_encode($detailedAnswers, JSON_UNESCAPED_UNICODE),
             'exam_round' => $exam['exam_round'] ?? '1',
         ]);
+
+        $attemptModel->update($attempt['id'], [
+            'status' => 'submitted',
+            'submitted_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        $this->session->remove('student_attempt_id');
 
         return $this->respond([
             'success' => true,
             'score' => $score,
             'total' => $totalQuestions,
-            'message' => $cheatingCount > 0 ? "สอบเสร็จสิ้น (มีการบันทึกพฤติกรรมระหว่างสอบ)" : "ส่งคำตอบเรียบร้อย!"
+            'message' => $cheatingCount > 0 ? 'สอบเสร็จสิ้น (มีการบันทึกพฤติกรรมระหว่างสอบ)' : 'ส่งคำตอบเรียบร้อย!'
         ]);
     }
 
     public function submitCheat()
     {
-        $email = $this->session->get('student_email');
-        $examId = $this->session->get('student_exam_id');
-        if (!$email || !$examId) {
-            return $this->respond(['success' => false, 'message' => 'Unauthorized'], 401);
-        }
+        $email = strtolower(trim((string) $this->session->get('student_email')));
+        $examId = (string) $this->session->get('student_exam_id');
+        if (!$email || !$examId) return $this->respond(['success' => false, 'message' => 'Unauthorized'], 401);
 
         $examModel = new ExamModel();
         $exam = $examModel->find($examId);
-        if (!$exam) {
-            return $this->respond(['success' => false, 'message' => 'Exam not found'], 404);
+        if (!$exam) return $this->respond(['success' => false, 'message' => 'Exam not found'], 404);
+        if (($exam['exam_status'] ?? '') !== 'Started') return $this->respond(['success' => false, 'message' => 'การสอบไม่ได้เปิดอยู่'], 409);
+        if ((int) ($exam['anti_cheating'] ?? 1) !== 1) return $this->respond(['success' => false, 'message' => 'ระบบตรวจจับการทุจริตถูกปิดไว้สำหรับการสอบนี้'], 403);
+
+        $reason = trim((string) ($this->request->getPost('cheatingReason') ?? 'TAB_SWITCH_VIOLATION'));
+        $attemptModel = new \App\Models\ExamAttemptModel();
+        $attemptId = (string) ($this->session->get('student_attempt_id') ?? '');
+        $attempt = $attemptId !== '' ? $attemptModel->find($attemptId) : null;
+        if (!$attempt) {
+            $attempt = $attemptModel->where('exam_id', $examId)->where('student_email', $email)
+                ->where('status', 'in_progress')->orderBy('started_at', 'DESC')->first();
         }
-
-        $reason = $this->request->getPost('cheatingReason') ?? 'TAB_SWITCH_VIOLATION';
-        $timeSpent = (int) $this->request->getPost('totalTimeSpent');
-
-        $settingModel = new SettingModel();
-        $settings = $settingModel->getSettings();
 
         $resultModel = new ExamResultModel();
-        
         $attempts = $resultModel->where('email', $email)->where('exam_id', $examId)->countAllResults();
-        $maxAttempts = (int) $exam['max_attempts'];
-        
-        if ($attempts >= $maxAttempts) {
-            return $this->respond(['success' => false, 'message' => 'คุณส่งข้อสอบครบตามสิทธิ์ที่กำหนดแล้ว'], 400);
-        }
-        
-        $attemptNumber = $attempts + 1;
+        $maxAttempts = max(1, (int) $exam['max_attempts']);
+        if ($attempts >= $maxAttempts) return $this->respond(['success' => false, 'message' => 'คุณส่งข้อสอบครบตามสิทธิ์ที่กำหนดแล้ว'], 400);
+
+        $attemptNumber = $attempt ? (int) ($attempt['attempt_number'] ?? ($attempts + 1)) : ($attempts + 1);
+        $timeSpent = 0;
+        if ($attempt && !empty($attempt['started_at'])) $timeSpent = max(0, time() - strtotime($attempt['started_at']));
 
         $resultModel->insert([
             'exam_id' => $examId,
@@ -631,13 +705,22 @@ class ExamController extends BaseController
             'total_time_spent' => $timeSpent,
             'attempt_number' => $attemptNumber,
             'cheating_flag' => 'YES',
-            'cheating_count' => isset($exam['max_strikes']) && (int) $exam['max_strikes'] > 0
-                ? (int) $exam['max_strikes']
-                : (int) ($settings['Max Cheating Strikes'] ?? 3),
+            // The event that triggered auto-submit is the configured strike limit.
+            // Keep the stored value consistent with the actual disqualification threshold.
+            'cheating_count' => max(1, (int) ($exam['max_strikes'] ?? 3)),
             'cheating_reason' => $reason,
             'answers_json' => json_encode([], JSON_UNESCAPED_UNICODE),
             'exam_round' => $exam['exam_round'] ?? '1',
         ]);
+
+        if ($attempt) {
+            $attemptModel->update($attempt['id'], [
+                'status' => 'cheated',
+                'submitted_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+        $this->session->remove('student_attempt_id');
 
         return $this->respond(['success' => true, 'message' => 'บันทึกการโกงเรียบร้อย คะแนนสอบเป็น 0']);
     }

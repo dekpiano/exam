@@ -11,7 +11,7 @@ class ExamAttemptModel extends Model
     protected $useAutoIncrement = false;
     protected $returnType       = 'array';
     protected $allowedFields    = [
-        'id', 'exam_id', 'student_email', 'exam_round', 'status',
+        'id', 'exam_id', 'student_email', 'exam_round', 'attempt_number', 'status',
         'questions_json', 'started_at', 'submitted_at', 'updated_at'
     ];
 }

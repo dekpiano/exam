@@ -18,52 +18,6 @@ class AdminController extends BaseController
     public function __construct()
     {
         $this->session = \Config\Services::session();
-        $this->checkDatabaseSchema();
-    }
-
-    private function checkDatabaseSchema()
-    {
-        try {
-            $db = \Config\Database::connect();
-            if (!$db->fieldExists('exam_round', 'exams')) {
-                $db->query("ALTER TABLE exams ADD COLUMN exam_round VARCHAR(100) DEFAULT '1' COMMENT 'รอบการสอบปัจจุบัน' AFTER num_questions");
-            }
-            if (!$db->fieldExists('exam_round', 'exam_results')) {
-                $db->query("ALTER TABLE exam_results ADD COLUMN exam_round VARCHAR(100) DEFAULT '1' COMMENT 'รอบการสอบที่บันทึกผล' AFTER attempt_number");
-            }
-            if (!$db->fieldExists('student_code', 'students')) {
-                $db->query("ALTER TABLE students ADD COLUMN student_code VARCHAR(50) DEFAULT '' COMMENT 'เลขประจำตัวนักเรียน' AFTER name");
-            }
-            if (!$db->fieldExists('student_code', 'exam_results')) {
-                $db->query("ALTER TABLE exam_results ADD COLUMN student_code VARCHAR(50) DEFAULT '' COMMENT 'เลขประจำตัวนักเรียน' AFTER name");
-            }
-            if (!$db->fieldExists('exam_duration', 'exams')) {
-                $db->query("ALTER TABLE exams ADD COLUMN exam_duration INT DEFAULT 0 COMMENT 'เวลาทำข้อสอบทั้งหมด (นาที) 0 = ไม่จำกัด' AFTER time_limit_writing");
-            }
-            if (!$db->fieldExists('started_at', 'exams')) {
-                $db->query("ALTER TABLE exams ADD COLUMN started_at DATETIME NULL COMMENT 'เวลาที่กดเริ่มการสอบ' AFTER exam_status");
-            }
-            if (!$db->fieldExists('join_policy', 'exams')) {
-                $db->query("ALTER TABLE exams ADD COLUMN join_policy VARCHAR(100) DEFAULT 'anytime' COMMENT 'นโยบายการเข้าร่วมสอบ: anytime = เริ่มตอนไหนก็ได้, lobby_first = ต้องรอในห้องพักคอยก่อนเริ่ม' AFTER exam_duration");
-            }
-            if (!$db->fieldExists('anti_cheating', 'exams')) {
-                $db->query("ALTER TABLE exams ADD COLUMN anti_cheating TINYINT DEFAULT 1 COMMENT 'ระบบสลับหน้าจอ/จับทุจริต: 1 = เปิดใช้งาน, 0 = ปิดใช้งาน' AFTER join_policy");
-            }
-            if (!$db->fieldExists('max_strikes', 'exams')) {
-                $db->query("ALTER TABLE exams ADD COLUMN max_strikes INT DEFAULT 3 COMMENT 'จำนวนครั้งสลับหน้าจอสูงสุดที่อนุญาตให้ทำได้ก่อนระงับสอบ' AFTER anti_cheating");
-            }
-            if (!$db->fieldExists('exam_mode', 'exams')) {
-                $db->query("ALTER TABLE exams ADD COLUMN exam_mode VARCHAR(50) DEFAULT 'classic' COMMENT 'รูปแบบการสอบ: classic = ข้อสอบมาตรฐาน, pokemon = เดินเล่นเกมแนวโปเกมอน' AFTER exam_round");
-            }
-            if (!$db->fieldExists('exam_id', 'error_logs')) {
-                $db->query("ALTER TABLE error_logs ADD COLUMN exam_id VARCHAR(36) NULL COMMENT 'รหัสการสอบที่เกิดเหตุการณ์' AFTER id");
-            }
-            // Ensure points in questions and scores in exam_results support decimals (FLOAT)
-            $db->query("ALTER TABLE questions MODIFY COLUMN points FLOAT NOT NULL DEFAULT 1");
-            $db->query("ALTER TABLE exam_results MODIFY COLUMN score FLOAT DEFAULT 0, MODIFY COLUMN total_questions FLOAT DEFAULT 0");
-        } catch (\Exception $e) {
-            // Log or ignore schema check error
-        }
     }
 
     public function index()
@@ -299,13 +253,23 @@ class AdminController extends BaseController
 
     public function login()
     {
-        $password = $this->request->getPost('password') ?? '';
-
+        $password = (string) ($this->request->getPost('password') ?? '');
         $settingModel = new SettingModel();
         $settings = $settingModel->getSettings();
-        $storedPassword = $settings['Admin Password'] ?? 'admin1234';
+        $storedPassword = (string) ($settings['Admin Password'] ?? '');
 
-        if (trim($password) === trim($storedPassword)) {
+        $valid = false;
+        if ($storedPassword !== '' && password_get_info($storedPassword)['algo'] !== 0) {
+            $valid = password_verify($password, $storedPassword);
+        } elseif ($storedPassword !== '') {
+            // Backward compatibility for an existing plaintext installation.
+            $valid = hash_equals(trim($storedPassword), trim($password));
+            if ($valid) {
+                $settingModel->updateSettings(['Admin Password' => password_hash($password, PASSWORD_DEFAULT)]);
+            }
+        }
+
+        if ($valid) {
             $this->session->set('admin_logged_in', true);
             $this->session->set('teacher_name', $settings['Teacher Name'] ?? 'ผู้ดูแลระบบ');
             return $this->respond(['success' => true, 'message' => 'เข้าสู่ระบบสำเร็จ']);
@@ -425,6 +389,48 @@ class AdminController extends BaseController
         }
     }
 
+
+    /**
+     * Verify that the authenticated teacher owns the requested exam.
+     * A password-authenticated administrator has no teacher_email and is treated as super admin.
+     */
+    private function authorizeExam(string $examId): array
+    {
+        if ($examId === '') {
+            throw new \Exception('Missing exam ID', 400);
+        }
+
+        $examModel = new \App\Models\ExamModel();
+        $exam = $examModel->find($examId);
+        if (!$exam) {
+            throw new \Exception('ไม่พบรายวิชาสอบ', 404);
+        }
+
+        $teacherEmail = strtolower(trim((string) $this->session->get('teacher_email')));
+        if ($teacherEmail !== '') {
+            $ownerEmail = strtolower(trim((string) ($exam['teacher_email'] ?? '')));
+            if ($ownerEmail !== '' && $ownerEmail !== $teacherEmail) {
+                throw new \Exception('คุณไม่มีสิทธิ์จัดการรายวิชานี้', 403);
+            }
+            if ($ownerEmail === '') {
+                throw new \Exception('รายวิชานี้ยังไม่มีผู้รับผิดชอบที่ตรงกับบัญชีของคุณ', 403);
+            }
+        }
+
+        return $exam;
+    }
+
+    private function authorizeQuestion(string $questionId): array
+    {
+        $questionModel = new QuestionModel();
+        $question = $questionModel->find($questionId);
+        if (!$question) {
+            throw new \Exception('ไม่พบข้อสอบ', 404);
+        }
+        $this->authorizeExam((string) $question['exam_id']);
+        return $question;
+    }
+
     /**
      * Delete an uploaded image from both the new (public/uploads) and
      * legacy (root uploads) storage locations.
@@ -452,7 +458,12 @@ class AdminController extends BaseController
         try {
             $this->checkAuth();
             $settingModel = new SettingModel();
-            return $this->respond(['success' => true, 'settings' => $settingModel->getSettings()]);
+            $settings = $settingModel->getSettings();
+            // Never expose the password hash to the browser.
+            if (array_key_exists('Admin Password', $settings)) {
+                $settings['Admin Password'] = '********';
+            }
+            return $this->respond(['success' => true, 'settings' => $settings]);
         } catch (\Exception $e) {
             return $this->respond(['success' => false, 'message' => $e->getMessage()], $e->getCode() ?: 500);
         }
@@ -472,12 +483,20 @@ class AdminController extends BaseController
             }
 
             $settingModel = new SettingModel();
+            $current = $settingModel->getSettings();
+            if (isset($settings['Admin Password'])) {
+                $newPassword = (string) $settings['Admin Password'];
+                if ($newPassword === '' || $newPassword === '********') {
+                    unset($settings['Admin Password']);
+                } else {
+                    $settings['Admin Password'] = password_hash($newPassword, PASSWORD_DEFAULT);
+                }
+            }
             $settingModel->updateSettings($settings);
 
-            // If exam status is set to Waiting, clear the student lobby
             if (isset($settings['Exam Status']) && $settings['Exam Status'] === 'Waiting') {
                 $studentModel = new StudentModel();
-                $studentModel->truncate(); // Clear lobby list
+                $studentModel->truncate();
             }
 
             return $this->respond(['success' => true, 'message' => 'บันทึกการตั้งค่าเรียบร้อยแล้ว']);
@@ -626,39 +645,28 @@ class AdminController extends BaseController
     {
         try {
             $this->checkAuth();
-            $id = $this->request->getPost('id');
-            $status = $this->request->getPost('status');
+            $id = (string) $this->request->getPost('id');
+            $status = (string) $this->request->getPost('status');
+            if ($id === '' || $status === '') return $this->respond(['success' => false, 'message' => 'Missing parameters'], 400);
+            if (!in_array($status, ['Waiting', 'Started', 'Paused', 'Finished'], true)) return $this->respond(['success' => false, 'message' => 'สถานะการสอบไม่ถูกต้อง'], 400);
 
-            if (empty($id) || empty($status)) {
-                return $this->respond(['success' => false, 'message' => 'Missing parameters'], 400);
-            }
-
+            $exam = $this->authorizeExam($id);
             $examModel = new \App\Models\ExamModel();
-            $exam = $examModel->find($id);
-            if (!$exam) {
-                return $this->respond(['success' => false, 'message' => 'ไม่พบวิชาสอบนี้'], 404);
-            }
-
             $updateData = ['exam_status' => $status];
             if ($status === 'Started') {
-                // Preserve the original start time on resume (Paused -> Started)
-                if (empty($exam['started_at'])) {
-                    $updateData['started_at'] = date('Y-m-d H:i:s');
-                }
-            } else if ($status === 'Waiting') {
+                if (empty($exam['started_at'])) $updateData['started_at'] = date('Y-m-d H:i:s');
+            } elseif ($status === 'Waiting') {
                 $updateData['started_at'] = null;
             }
             $examModel->update($id, $updateData);
 
-            // Clear students queue if status is Waiting
             if ($status === 'Waiting') {
-                $studentModel = new StudentModel();
-                $studentModel->where('exam_id', $id)->delete();
+                (new StudentModel())->where('exam_id', $id)->delete();
+                (new \App\Models\ExamAttemptModel())->where('exam_id', $id)->where('status', 'in_progress')->update(null, ['status' => 'abandoned', 'updated_at' => date('Y-m-d H:i:s')]);
             }
-
             return $this->respond(['success' => true, 'message' => 'ปรับปรุงสถานะสอบแล้ว']);
         } catch (\Exception $e) {
-            return $this->respond(['success' => false, 'message' => $e->getMessage()], 500);
+            return $this->respond(['success' => false, 'message' => $e->getMessage()], $e->getCode() ?: 500);
         }
     }
 
@@ -666,23 +674,14 @@ class AdminController extends BaseController
     {
         try {
             $this->checkAuth();
-            $id = $this->request->getPost('id');
-            $policy = $this->request->getPost('join_policy');
-
-            if (empty($id) || empty($policy)) {
-                return $this->respond(['success' => false, 'message' => 'Missing parameters'], 400);
-            }
-
-            $examModel = new \App\Models\ExamModel();
-            $exam = $examModel->find($id);
-            if (!$exam) {
-                return $this->respond(['success' => false, 'message' => 'ไม่พบวิชาสอบนี้'], 404);
-            }
-
-            $examModel->update($id, ['join_policy' => $policy]);
+            $id = (string) $this->request->getPost('id');
+            $policy = (string) $this->request->getPost('join_policy');
+            if ($id === '' || !in_array($policy, ['anytime', 'lobby_first'], true)) return $this->respond(['success' => false, 'message' => 'ข้อมูลนโยบายไม่ถูกต้อง'], 400);
+            $this->authorizeExam($id);
+            (new \App\Models\ExamModel())->update($id, ['join_policy' => $policy]);
             return $this->respond(['success' => true, 'message' => 'ปรับปรุงนโยบายการเข้าร่วมสอบแล้ว']);
         } catch (\Exception $e) {
-            return $this->respond(['success' => false, 'message' => $e->getMessage()], 500);
+            return $this->respond(['success' => false, 'message' => $e->getMessage()], $e->getCode() ?: 500);
         }
     }
 
@@ -690,23 +689,14 @@ class AdminController extends BaseController
     {
         try {
             $this->checkAuth();
-            $id = $this->request->getPost('id');
-            $mode = $this->request->getPost('exam_mode');
-
-            if (empty($id) || empty($mode)) {
-                return $this->respond(['success' => false, 'message' => 'Missing parameters'], 400);
-            }
-
-            $examModel = new \App\Models\ExamModel();
-            $exam = $examModel->find($id);
-            if (!$exam) {
-                return $this->respond(['success' => false, 'message' => 'ไม่พบวิชาสอบนี้'], 404);
-            }
-
-            $examModel->update($id, ['exam_mode' => $mode]);
+            $id = (string) $this->request->getPost('id');
+            $mode = (string) $this->request->getPost('exam_mode');
+            if ($id === '' || !in_array($mode, ['classic', 'pokemon'], true)) return $this->respond(['success' => false, 'message' => 'รูปแบบการสอบไม่ถูกต้อง'], 400);
+            $this->authorizeExam($id);
+            (new \App\Models\ExamModel())->update($id, ['exam_mode' => $mode]);
             return $this->respond(['success' => true, 'message' => 'ปรับปรุงรูปแบบการสอบเรียบร้อยแล้ว']);
         } catch (\Exception $e) {
-            return $this->respond(['success' => false, 'message' => $e->getMessage()], 500);
+            return $this->respond(['success' => false, 'message' => $e->getMessage()], $e->getCode() ?: 500);
         }
     }
 
@@ -714,27 +704,24 @@ class AdminController extends BaseController
     {
         try {
             $this->checkAuth();
-            $id = $this->request->getPost('id');
-            if (empty($id)) {
-                return $this->respond(['success' => false, 'message' => 'Missing exam ID'], 400);
-            }
+            $id = (string) $this->request->getPost('id');
+            if ($id === '') return $this->respond(['success' => false, 'message' => 'Missing exam ID'], 400);
+            $this->authorizeExam($id);
 
-            $examModel = new \App\Models\ExamModel();
-            $examModel->delete($id);
-
-            // Cascade delete related records
-            $questionModel = new QuestionModel();
-            $questionModel->where('exam_id', $id)->delete();
-
-            $resultModel = new ExamResultModel();
-            $resultModel->where('exam_id', $id)->delete();
-
-            $studentModel = new StudentModel();
-            $studentModel->where('exam_id', $id)->delete();
+            $db = \Config\Database::connect();
+            $db->transStart();
+            (new QuestionModel())->where('exam_id', $id)->delete();
+            (new ExamResultModel())->where('exam_id', $id)->delete();
+            (new StudentModel())->where('exam_id', $id)->delete();
+            (new ErrorLogModel())->where('exam_id', $id)->delete();
+            (new \App\Models\ExamAttemptModel())->where('exam_id', $id)->delete();
+            (new \App\Models\ExamModel())->delete($id);
+            $db->transComplete();
+            if ($db->transStatus() === false) throw new \Exception('ไม่สามารถลบข้อมูลรายวิชาได้', 500);
 
             return $this->respond(['success' => true, 'message' => 'ลบรายวิชาและข้อมูลที่เกี่ยวข้องสำเร็จ']);
         } catch (\Exception $e) {
-            return $this->respond(['success' => false, 'message' => $e->getMessage()], 500);
+            return $this->respond(['success' => false, 'message' => $e->getMessage()], $e->getCode() ?: 500);
         }
     }
 
@@ -748,10 +735,7 @@ class AdminController extends BaseController
             }
 
             $examModel = new \App\Models\ExamModel();
-            $sourceExam = $examModel->find($sourceId);
-            if (!$sourceExam) {
-                return $this->respond(['success' => false, 'message' => 'ไม่พบข้อมูลวิชาต้นฉบับ'], 404);
-            }
+            $sourceExam = $this->authorizeExam((string) $sourceId);
 
             $teacherEmail = $this->session->get('teacher_email');
             $teacherName = $this->session->get('teacher_name');
@@ -855,9 +839,17 @@ class AdminController extends BaseController
             $examId = $this->request->getGet('exam_id');
             $questionModel = new QuestionModel();
             if ($examId) {
+                $this->authorizeExam((string) $examId);
                 $questions = $questionModel->where('exam_id', $examId)->findAll();
             } else {
-                $questions = $questionModel->findAll();
+                $teacherEmail = strtolower(trim((string) $this->session->get('teacher_email')));
+                if ($teacherEmail !== '') {
+                    $db = \Config\Database::connect();
+                    $ids = array_column($db->table('exams')->select('id')->where('teacher_email', $teacherEmail)->get()->getResultArray(), 'id');
+                    $questions = empty($ids) ? [] : $questionModel->whereIn('exam_id', $ids)->findAll();
+                } else {
+                    $questions = $questionModel->findAll();
+                }
             }
             return $this->respond(['success' => true, 'questions' => $questions]);
         } catch (\Exception $e) {
@@ -883,6 +875,9 @@ class AdminController extends BaseController
             if (empty($examId)) {
                 return $this->respond(['success' => false, 'message' => 'กรุณาระบุรายวิชาสอบ'], 400);
             }
+            $this->authorizeExam((string) $examId);
+
+            if (!empty($id)) $this->authorizeQuestion((string) $id);
 
             $options = $this->request->getPost('options');
             if (is_string($options)) {
@@ -938,7 +933,7 @@ class AdminController extends BaseController
             }
 
             $questionModel = new QuestionModel();
-            $question = $questionModel->find($id);
+            $question = $this->authorizeQuestion((string) $id);
             if ($question && !empty($question['image_url'])) {
                 self::deleteUploadedImage($question['image_url']);
             }
@@ -958,6 +953,7 @@ class AdminController extends BaseController
             if (empty($examId)) {
                 return $this->respond(['success' => false, 'message' => 'Missing exam ID'], 400);
             }
+            $this->authorizeExam((string) $examId);
 
             $questionModel = new QuestionModel();
             $questions = $questionModel->where('exam_id', $examId)->findAll();
@@ -984,6 +980,7 @@ class AdminController extends BaseController
             if (empty($id) || $points === null || $points === '') {
                 return $this->respond(['success' => false, 'message' => 'Missing parameters'], 400);
             }
+            $this->authorizeQuestion((string) $id);
 
             $db = \Config\Database::connect();
             $db->query("UPDATE questions SET points = ? WHERE id = ?", [(float)$points, $id]);
@@ -1005,6 +1002,7 @@ class AdminController extends BaseController
             if (empty($examId)) {
                 return $this->respond(['success' => false, 'message' => 'Missing exam ID'], 400);
             }
+            $this->authorizeExam((string) $examId);
 
             if (is_string($rows)) {
                 $rows = json_decode($rows, true);
@@ -1199,90 +1197,19 @@ class AdminController extends BaseController
             $this->checkAuth();
             $examId = $this->request->getGet('exam_id');
             $resultModel = new ExamResultModel();
-            
             if ($examId) {
+                $this->authorizeExam((string) $examId);
                 $results = $resultModel->where('exam_id', $examId)->orderBy('submitted_at', 'DESC')->findAll();
             } else {
-                $results = $resultModel->orderBy('submitted_at', 'DESC')->findAll();
-            }
-
-            // --- Auto-Repair choice scores on the fly for any mismatched imports ---
-            if (!empty($results)) {
-                $questionModel = new QuestionModel();
-                $allQs = $questionModel->findAll();
-                $qMap = [];
-                foreach ($allQs as $q) {
-                    $qMap[$q['id']] = $q;
-                }
-
-                foreach ($results as &$res) {
-                    $answers = json_decode($res['answers_json'], true);
-                    if (!is_array($answers)) continue;
-
-                    $scoreUpdated = false;
-                    $recalculatedScore = 0;
-
-                    foreach ($answers as &$ans) {
-                        $qId = $ans['questionId'] ?? '';
-                        if (empty($qId) || !isset($qMap[$qId])) continue;
-
-                        $q = $qMap[$qId];
-                        $selected = trim($ans['selected'] ?? '');
-
-                        // Always sync reference answer with current DB value
-                        $currentCorrectAnswer = $q['correct_answer'] ?? '';
-                        if (($ans['correct'] ?? '') !== $currentCorrectAnswer) {
-                            $ans['correct'] = $currentCorrectAnswer;
-                            $scoreUpdated = true;
-                        }
-                        
-                        if ($ans['type'] === 'choice') {
-                            $isCorrect = false;
-                            $correctAnswerText = trim($q['correct_answer']);
-                            $isCorrect = (strcasecmp($selected, $correctAnswerText) === 0);
-
-                            $newStatus = $isCorrect ? 'ถูกต้อง' : 'ผิด';
-                            if (($ans['isCorrect'] ?? '') !== $newStatus) {
-                                $ans['isCorrect'] = $newStatus;
-                                $scoreUpdated = true;
-                            }
-
-                            $newPoints = (float)$q['points'];
-                            if ((float)($ans['points'] ?? 0) !== $newPoints) {
-                                $ans['points'] = $newPoints;
-                                $scoreUpdated = true;
-                            }
-
-                            if ($isCorrect) {
-                                $recalculatedScore += $newPoints;
-                            }
-                        } else if ($ans['type'] === 'writing') {
-                            $newPoints = (float)$q['points'];
-                            if ((float)($ans['points'] ?? 0) !== $newPoints) {
-                                $ans['points'] = $newPoints;
-                                $scoreUpdated = true;
-                            }
-                            if (($ans['isCorrect'] ?? '') !== 'รอตรวจ') {
-                                $recalculatedScore += (float)($ans['isCorrect'] ?? 0);
-                            }
-                        }
-                    }
-
-                    // Only rewrite when answers_json content actually changed,
-                    // so manually adjusted scores (updateScoreDirect) are preserved.
-                    if ($scoreUpdated) {
-                        $res['score'] = $recalculatedScore;
-                        $res['answers_json'] = json_encode($answers, JSON_UNESCAPED_UNICODE);
-
-                        $resultModel->update($res['id'], [
-                            'score' => $recalculatedScore,
-                            'answers_json' => $res['answers_json']
-                        ]);
-                    }
+                $teacherEmail = strtolower(trim((string) $this->session->get('teacher_email')));
+                if ($teacherEmail !== '') {
+                    $db = \Config\Database::connect();
+                    $ids = array_column($db->table('exams')->select('id')->where('teacher_email', $teacherEmail)->get()->getResultArray(), 'id');
+                    $results = empty($ids) ? [] : $resultModel->whereIn('exam_id', $ids)->orderBy('submitted_at', 'DESC')->findAll();
+                } else {
+                    $results = $resultModel->orderBy('submitted_at', 'DESC')->findAll();
                 }
             }
-            // ------------------------------------------------------------------------
-
             return $this->respond(['success' => true, 'results' => $results]);
         } catch (\Exception $e) {
             return $this->respond(['success' => false, 'message' => $e->getMessage()], $e->getCode() ?: 500);
@@ -1303,6 +1230,7 @@ class AdminController extends BaseController
             if ($result) {
                 $email = $result['email'];
                 $examId = $result['exam_id'];
+                $this->authorizeExam((string) $examId);
 
                 // Delete student lobby/registration record
                 $studentModel = new StudentModel();
@@ -1325,7 +1253,7 @@ class AdminController extends BaseController
         try {
             $this->checkAuth();
             $id = $this->request->getPost('id');
-            $totalScore = (int)$this->request->getPost('totalScore');
+            $totalScore = (float)$this->request->getPost('totalScore');
             $writingScores = $this->request->getPost('writingScores');
 
             if (is_string($writingScores)) {
@@ -1342,6 +1270,7 @@ class AdminController extends BaseController
             if (!$result) {
                 return $this->respond(['success' => false, 'message' => 'ไม่พบข้อมูลการสอบนี้'], 404);
             }
+            $this->authorizeExam((string) $result['exam_id']);
 
             $answers = json_decode($result['answers_json'], true);
 
@@ -1387,6 +1316,7 @@ class AdminController extends BaseController
             if (!$result) {
                 return $this->respond(['success' => false, 'message' => 'ไม่พบข้อมูลการสอบนี้'], 404);
             }
+            $this->authorizeExam((string) $result['exam_id']);
 
             $answers = json_decode($result['answers_json'], true);
             $totalScore = 0;
@@ -1447,6 +1377,7 @@ class AdminController extends BaseController
             if (!$result) {
                 return $this->respond(['success' => false, 'message' => 'ไม่พบข้อมูลการสอบนี้'], 404);
             }
+            $this->authorizeExam((string) $result['exam_id']);
 
             $updateData = [
                 'score' => (float)$score,
@@ -1472,43 +1403,37 @@ class AdminController extends BaseController
         try {
             $this->checkAuth();
             $examId = $this->request->getGet('exam_id');
+            if ($examId) {
+                $this->authorizeExam((string) $examId);
+            }
             $studentModel = new StudentModel();
-            
             $timeThreshold = date('Y-m-d H:i:s', time() - 120);
             $query = $studentModel->where('last_active >=', $timeThreshold);
-            if ($examId) {
-                $query = $query->where('exam_id', $examId);
+            if ($examId) $query->where('exam_id', $examId);
+            else {
+                $teacherEmail = strtolower(trim((string) $this->session->get('teacher_email')));
+                if ($teacherEmail !== '') {
+                    $db = \Config\Database::connect();
+                    $ids = array_column($db->table('exams')->select('id')->where('teacher_email', $teacherEmail)->get()->getResultArray(), 'id');
+                    if (empty($ids)) return $this->respond(['success' => true, 'students' => [], 'examStatus' => 'Waiting', 'joinPolicy' => 'anytime', 'examMode' => 'classic']);
+                    $query->whereIn('exam_id', $ids);
+                }
             }
             $students = $query->orderBy('name', 'ASC')->findAll();
 
-            $joinPolicy = 'anytime';
-            $examStatus = 'Waiting';
-            $examMode = 'classic';
+            $joinPolicy = 'anytime'; $examStatus = 'Waiting'; $examMode = 'classic';
             if ($examId) {
-                $examModel = new \App\Models\ExamModel();
-                $exam = $examModel->find($examId);
+                $exam = (new \App\Models\ExamModel())->find($examId);
                 if ($exam) {
                     $examStatus = $exam['exam_status'];
                     $joinPolicy = $exam['join_policy'] ?? 'anytime';
                     $examMode = $exam['exam_mode'] ?? 'classic';
                 }
             }
-                                     
             $lobbyMode = 'game';
-            $settingModel = new \App\Models\SettingModel();
-            $settingsData = $settingModel->getSettings();
-            if (isset($settingsData['Lobby Mode'])) {
-                $lobbyMode = $settingsData['Lobby Mode'];
-            }
-                                     
-            return $this->respond([
-                'success' => true, 
-                'students' => $students,
-                'exam_status' => $examStatus,
-                'lobby_mode' => $lobbyMode,
-                'join_policy' => $joinPolicy,
-                'exam_mode' => $examMode
-            ]);
+            $settingsData = (new \App\Models\SettingModel())->getSettings();
+            if (isset($settingsData['Lobby Mode'])) $lobbyMode = $settingsData['Lobby Mode'];
+            return $this->respond(['success' => true, 'students' => $students, 'examStatus' => $examStatus, 'joinPolicy' => $joinPolicy, 'examMode' => $examMode, 'lobbyMode' => $lobbyMode]);
         } catch (\Exception $e) {
             return $this->respond(['success' => false, 'message' => $e->getMessage()], $e->getCode() ?: 500);
         }

@@ -450,7 +450,7 @@
         </span>
       </div>
 
-      <div id="examsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
+      <div id="examsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
         <?php if (empty($exams)): ?>
           <div class="col-span-full text-center py-20 bg-white/5 border border-white/10 rounded-3xl">
             <span class="text-5xl">📭</span>
@@ -592,6 +592,9 @@
           <?php endforeach; ?>
         <?php endif; ?>
       </div>
+
+      <!-- Exam Pagination -->
+      <nav id="examPagination" class="flex justify-center items-center gap-2 pb-10" aria-label="Pagination"></nav>
     </main>
 
     <!-- Teacher Entry Footer -->
@@ -715,8 +718,8 @@
         <div>
           <label for="studentEmail"
             class="text-xs font-black text-skjBlue ml-1 mb-1.5 block uppercase tracking-wider">อีเมลสำหรับใช้สอบ</label>
-          <input type="email" id="studentEmail" name="email" class="input-box" placeholder="กรอกอีเมลของคุณ (เช่น yourname@gmail.com)"
-            required>
+          <input type="email" id="studentEmail" name="email" class="input-box" placeholder="skj10256@skj.ac.th"
+            autocomplete="email" required>
         </div>
 
         <!-- Exam Mode Display (กำหนดโดยครูผู้สอน) -->
@@ -825,11 +828,53 @@
     }
 
     let currentExamTypeFilter = 'all';
+    let currentExamPage = 1;
+    const examsPerPage = 12;
+
+    function renderExamPagination(totalItems) {
+      const pagination = document.getElementById('examPagination');
+      if (!pagination) return;
+
+      const totalPages = Math.ceil(totalItems / examsPerPage);
+      pagination.innerHTML = '';
+
+      if (totalPages <= 1) return;
+
+      const makeButton = (label, page, disabled = false, active = false) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = label;
+        btn.className = 'min-w-10 h-10 px-3 rounded-xl border text-sm font-extrabold transition-all ' +
+          (active
+            ? 'bg-skjPink text-white border-skjPink shadow-lg shadow-skjPink/20'
+            : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10 hover:text-white') +
+          (disabled ? ' opacity-40 cursor-not-allowed' : ' cursor-pointer');
+        btn.disabled = disabled;
+        if (!disabled) {
+          btn.addEventListener('click', () => {
+            currentExamPage = page;
+            filterExams(false);
+            document.getElementById('examsGrid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }
+        return btn;
+      };
+
+      pagination.appendChild(makeButton('‹', Math.max(1, currentExamPage - 1), currentExamPage === 1));
+
+      const start = Math.max(1, currentExamPage - 2);
+      const end = Math.min(totalPages, currentExamPage + 2);
+      for (let page = start; page <= end; page++) {
+        pagination.appendChild(makeButton(String(page), page, false, page === currentExamPage));
+      }
+
+      pagination.appendChild(makeButton('›', Math.min(totalPages, currentExamPage + 1), currentExamPage === totalPages));
+    }
 
     function setExamTypeFilter(filterType) {
       currentExamTypeFilter = filterType;
+      currentExamPage = 1;
 
-      // Update active style on filter chips
       document.querySelectorAll('.filter-chip').forEach(btn => {
         btn.classList.remove('active');
       });
@@ -843,12 +888,14 @@
       filterExams();
     }
 
-    function filterExams() {
+    function filterExams(resetPage = true) {
+      if (resetPage) currentExamPage = 1;
+
       const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
       const yearFilter = document.getElementById('academicYearFilter');
       const selectedYear = yearFilter ? yearFilter.value : 'all';
-      const cards = document.querySelectorAll('.exam-card');
-      let visibleCount = 0;
+      const cards = Array.from(document.querySelectorAll('.exam-card'));
+      const matchedCards = [];
 
       cards.forEach(card => {
         const subName = (card.getAttribute('data-subject-name') || '').toLowerCase();
@@ -858,13 +905,11 @@
         const area = (card.getAttribute('data-learning-area') || '').toLowerCase();
         const cardYear = (card.getAttribute('data-academic-year') || '').trim();
 
-        // Check Academic Year matching (Defaults to latest year always)
         let matchesYear = true;
         if (selectedYear !== 'all' && selectedYear !== '') {
           matchesYear = (cardYear === selectedYear);
         }
 
-        // Search text matching
         const matchesSearch = searchVal === '' ||
           subName.includes(searchVal) ||
           subCode.includes(searchVal) ||
@@ -873,7 +918,6 @@
           cardYear.includes(searchVal) ||
           area.includes(searchVal);
 
-        // Filter chips matching (exam type)
         let matchesType = true;
         if (currentExamTypeFilter === 'กลางภาค') {
           matchesType = examType.includes('กลางภาค');
@@ -883,36 +927,41 @@
           matchesType = !examType.includes('กลางภาค') && !examType.includes('ปลายภาค');
         }
 
-        if (matchesYear && matchesSearch && matchesType) {
-          card.style.display = 'flex';
-          visibleCount++;
-        } else {
-          card.style.display = 'none';
-        }
+        if (matchesYear && matchesSearch && matchesType) matchedCards.push(card);
       });
 
-      // Update Filter Status & Count Bar
+      const totalPages = Math.max(1, Math.ceil(matchedCards.length / examsPerPage));
+      if (currentExamPage > totalPages) currentExamPage = totalPages;
+
+      const startIndex = (currentExamPage - 1) * examsPerPage;
+      const endIndex = startIndex + examsPerPage;
+
+      cards.forEach(card => {
+        card.style.display = 'none';
+      });
+      matchedCards.slice(startIndex, endIndex).forEach(card => {
+        card.style.display = 'flex';
+      });
+
       const countBadge = document.getElementById('examCountBadge');
       if (countBadge) {
-        countBadge.textContent = `${visibleCount} รายวิชา`;
+        countBadge.textContent = matchedCards.length + ' รายวิชา';
       }
+
       const labelEl = document.getElementById('currentFilterLabel');
       if (labelEl) {
-        let labelText = selectedYear === 'all' ? 'แสดงทุกปีการศึกษา' : `ปีการศึกษา ${selectedYear}`;
+        let labelText = selectedYear === 'all' ? 'แสดงทุกปีการศึกษา' : 'ปีการศึกษา ' + selectedYear;
         if (currentExamTypeFilter !== 'all') {
-          labelText += ` • ${currentExamTypeFilter === 'other' ? 'สอบอื่นๆ' : currentExamTypeFilter}`;
+          labelText += ' • ' + (currentExamTypeFilter === 'other' ? 'สอบอื่นๆ' : currentExamTypeFilter);
         }
-        if (searchVal) {
-          labelText += ` (ค้นหา: "${searchVal}")`;
-        }
+        if (searchVal) labelText += ' (ค้นหา: "' + searchVal + '")';
         labelEl.textContent = labelText;
       }
 
-      // Handle empty filtered list state
       let emptyMsg = document.getElementById('emptyFilteredMessage');
       if (emptyMsg) emptyMsg.remove();
 
-      if (visibleCount === 0) {
+      if (matchedCards.length === 0) {
         emptyMsg = document.createElement('div');
         emptyMsg.id = 'emptyFilteredMessage';
         emptyMsg.className = 'col-span-full text-center py-16 bg-white/5 border border-white/5 rounded-3xl backdrop-blur-md p-8';
@@ -925,6 +974,8 @@
         `;
         document.getElementById('examsGrid').appendChild(emptyMsg);
       }
+
+      renderExamPagination(matchedCards.length);
     }
 
     let currentModalExamMode = 'classic';
@@ -934,6 +985,14 @@
       document.getElementById('examIdField').value = examId;
       document.getElementById('modalSubjectTitle').textContent = subjectName;
       document.getElementById('modalTeacherName').textContent = `ครูผู้สอน: ${teacherName}`;
+
+      // สร้างอีเมลโรงเรียนอัตโนมัติจากเลขประจำตัวนักเรียน
+      const studentCodeInput = document.getElementById('studentCode');
+      const studentEmailInput = document.getElementById('studentEmail');
+      if (studentCodeInput && studentEmailInput) {
+        studentCodeInput.value = '';
+        studentEmailInput.value = '';
+      }
 
       currentModalExamMode = examMode || 'classic';
       const modeContainer = document.getElementById('modalExamModeContainer');
@@ -1009,6 +1068,36 @@
       const modal = document.getElementById('registerModal');
       modal.classList.remove('active');
       document.body.style.overflow = '';
+    }
+
+    // สร้างอีเมลโรงเรียนอัตโนมัติเมื่อกรอกเลขประจำตัวครบ 5 หลัก
+    const studentCodeInput = document.getElementById('studentCode');
+    const studentEmailInput = document.getElementById('studentEmail');
+
+    if (studentCodeInput && studentEmailInput) {
+      studentCodeInput.addEventListener('input', function () {
+        // รับเฉพาะตัวเลข และจำกัดไว้ 5 หลัก
+        this.value = this.value.replace(/\\D/g, '').slice(0, 5);
+
+        if (this.value.length === 5) {
+          // สร้างอีเมลโรงเรียนให้เป็นค่าเริ่มต้น แต่ยังเปิดให้ผู้เข้าสอบแก้ไขได้
+          studentEmailInput.value = `skj${this.value}@skj.ac.th`;
+          studentEmailInput.dataset.autoGenerated = 'true';
+        } else {
+          // ล้างเฉพาะอีเมลที่ระบบสร้างให้อัตโนมัติ
+          if (studentEmailInput.dataset.autoGenerated === 'true') {
+            studentEmailInput.value = '';
+            studentEmailInput.dataset.autoGenerated = 'false';
+          }
+        }
+      });
+    }
+
+    // หากผู้เข้าสอบแก้ไขอีเมลเอง ให้ถือว่าเป็นอีเมลที่ผู้ใช้กำหนด
+    if (studentEmailInput) {
+      studentEmailInput.addEventListener('input', function () {
+        this.dataset.autoGenerated = 'false';
+      });
     }
 
     // Submit handler
