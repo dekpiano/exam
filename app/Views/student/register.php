@@ -527,6 +527,8 @@
                   <div class="flex items-center gap-1.5">
                     <?php if (($exam['exam_mode'] ?? 'classic') === 'pokemon'): ?>
                       <span class="text-[10px] font-black text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-lg shadow-sm">⚡ Pokémon RPG</span>
+                    <?php elseif (($exam['exam_mode'] ?? 'classic') === 'escape_room'): ?>
+                      <span class="text-[10px] font-black text-violet-300 bg-violet-500/15 border border-violet-500/30 px-2 py-0.5 rounded-lg shadow-sm">🪙 Coin Quest</span>
                     <?php endif; ?>
                     <?php if ($semesterText !== ''): ?>
                       <span class="text-[11px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg">
@@ -1008,6 +1010,20 @@
                     <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-200 border border-amber-500/40">กำหนดโดยครู</span>
                   </div>
                   <p class="text-[11px] text-slate-300 mt-0.5">เดินเล่นผจญภัยในแผนที่ RPG และตอบคำถามประลองโปเกมอน</p>
+                </div>
+              </div>
+            </div>`;
+        } else if (currentModalExamMode === 'escape_room') {
+          modeContainer.innerHTML = `
+            <div class="p-3.5 rounded-2xl border border-violet-500/40 bg-gradient-to-r from-violet-500/15 via-indigo-500/10 to-slate-900 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="text-3xl">🪙</span>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-black text-violet-300">โหมดการสอบ: Coin Quest</span>
+                    <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-violet-500/30 text-violet-200 border border-violet-500/40">กำหนดโดยครู</span>
+                  </div>
+                  <p class="text-[11px] text-slate-300 mt-0.5">กระโดดเก็บเหรียญ แล้วตอบคำถามเพื่อผ่านด่าน</p>
                 </div>
               </div>
             </div>`;

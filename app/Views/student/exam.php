@@ -1338,9 +1338,550 @@
       background: #334155;
       color: #fff;
     }
+
+    /* Coin Quest gets its own compact, game-first frame. */
+    body[data-exam-mode="escape_room"] {
+      background: #080914;
+    }
+    body[data-exam-mode="escape_room"] .escape-room-hud {
+      backdrop-filter: blur(16px);
+    }
+    body[data-exam-mode="escape_room"] .escape-room-stage {
+      border-top-color: rgba(196, 181, 253, .14);
+      box-shadow: 0 30px 90px rgba(5, 3, 18, .65), inset 0 1px rgba(255,255,255,.05);
+    }
+    .escape-room-playfield {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 225px;
+      align-items: stretch;
+      background: radial-gradient(ellipse at 35% 45%, rgba(109,40,217,.12), transparent 55%), #090b15;
+    }
+    #escapeRoomCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 12 / 7;
+      background: #0a0c17;
+      image-rendering: pixelated;
+      touch-action: none;
+    }
+    .escape-room-controls {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1.15rem;
+      padding: 1.25rem;
+      border-left: 1px solid rgba(196,181,253,.14);
+      background: linear-gradient(155deg, rgba(23,19,41,.96), rgba(11,14,26,.96));
+    }
+    .escape-room-controls-title {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+    }
+    .escape-room-controls-hint {
+      color: #9ca3af;
+      font-size: .68rem;
+      line-height: 1.7;
+    }
+    .escape-room-controls-hint strong {
+      color: #ddd6fe;
+    }
+    .escape-room-action-key {
+      color: #f0abfc !important;
+      background: linear-gradient(145deg, #7e22ce, #581c87) !important;
+      border-color: rgba(240,171,252,.45) !important;
+      font-weight: 950;
+    }
+    #escapeRoomPrompt {
+      min-height: 2rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: color .2s, background .2s, transform .2s;
+    }
+    .escape-room-stage .dpad-btn {
+      width: 2.65rem;
+      height: 2.65rem;
+      border-radius: .85rem;
+      border: 1px solid rgba(196,181,253,.22);
+      background: rgba(255,255,255,.06);
+      color: #ede9fe;
+      box-shadow: inset 0 1px rgba(255,255,255,.08), 0 5px 14px rgba(0,0,0,.2);
+      transition: transform .12s, background .12s;
+    }
+    .escape-room-stage .dpad-btn:active {
+      transform: scale(.9);
+      background: rgba(168,85,247,.35);
+    }
+    .escape-room-stage .btn-quick-encounter {
+      min-width: min(100%, 250px);
+      border: 1px solid rgba(216,180,254,.55);
+      background: linear-gradient(135deg, #a855f7, #6d28d9);
+      color: white;
+      box-shadow: 0 8px 26px rgba(126,34,206,.35);
+    }
+    @keyframes escapeRoomEnter {
+      0% { opacity: 0; transform: translateY(14px) scale(.985); filter: blur(3px); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+    .escape-room-enter {
+      animation: escapeRoomEnter .42s cubic-bezier(.2,.75,.25,1) both;
+    }
+    .escape-room-step {
+      border: 1px solid rgba(196,181,253,.13);
+      border-radius: 999px;
+      padding: .4rem .75rem;
+      color: #827a92;
+      background: rgba(255,255,255,.025);
+      transition: all .25s;
+    }
+    .escape-room-step.active {
+      color: #fff;
+      border-color: rgba(232,121,249,.55);
+      background: linear-gradient(120deg, rgba(168,85,247,.28), rgba(217,70,239,.12));
+      box-shadow: 0 0 18px rgba(168,85,247,.18);
+    }
+    .escape-room-step.done {
+      color: #c4b5fd;
+      border-color: rgba(167,139,250,.35);
+      background: rgba(124,58,237,.12);
+    }
+    .escape-room-encounter {
+      display: flex;
+      align-items: center;
+      gap: .9rem;
+      padding: 1rem 1.2rem;
+      border: 1px solid rgba(216,180,254,.3);
+      border-radius: 1.25rem;
+      background: radial-gradient(circle at 0 50%, rgba(168,85,247,.2), transparent 45%), linear-gradient(120deg, #171329, #111827);
+      box-shadow: 0 16px 40px rgba(20,8,40,.35);
+    }
+    .escape-room-encounter-icon {
+      width: 3rem;
+      height: 3rem;
+      flex: 0 0 3rem;
+      display: grid;
+      place-items: center;
+      border-radius: 1rem;
+      background: linear-gradient(145deg, rgba(217,70,239,.25), rgba(124,58,237,.2));
+      border: 1px solid rgba(232,121,249,.35);
+      font-size: 1.35rem;
+      box-shadow: 0 0 24px rgba(217,70,239,.18);
+    }
+    body[data-exam-mode="escape_room"] .question-area {
+      border: 1px solid rgba(196,181,253,.2);
+      border-radius: 1.5rem;
+      background: linear-gradient(145deg, rgba(25,20,43,.97), rgba(9,12,24,.98));
+      box-shadow: 0 24px 65px rgba(5,3,18,.45);
+    }
+    body[data-exam-mode="escape_room"] .progress-section {
+      border-color: rgba(196,181,253,.2);
+    }
+    @media (max-width: 640px) {
+      body[data-exam-mode="escape_room"] .escape-room-hud {
+        margin-top: .5rem;
+        padding: .75rem;
+      }
+      body[data-exam-mode="escape_room"] #escapeRoomHud h2 {
+        font-size: .95rem;
+      }
+      body[data-exam-mode="escape_room"] .escape-room-stage {
+        width: 100%;
+        margin-bottom: 1rem;
+        border-radius: 0 0 1.25rem 1.25rem;
+      }
+      .escape-room-stage .dpad-btn {
+        width: 2.4rem;
+        height: 2.4rem;
+      }
+      .escape-room-playfield {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .escape-room-controls {
+        display: grid;
+        grid-template-columns: 112px minmax(0, 1fr);
+        grid-template-rows: auto auto auto;
+        align-items: center;
+        gap: .5rem .85rem;
+        padding: .75rem;
+        border-left: 0;
+        border-top: 1px solid rgba(196,181,253,.14);
+      }
+      .escape-room-controls-title {
+        grid-column: 2;
+        grid-row: 1;
+      }
+      .escape-room-dpad {
+        grid-column: 1;
+        grid-row: 1 / span 3;
+      }
+      .escape-room-controls-hint {
+        grid-column: 2;
+        grid-row: 2;
+      }
+      .escape-room-controls .btn-quick-encounter {
+        grid-column: 2;
+        grid-row: 3;
+        width: 100%;
+        min-width: 0;
+        padding: .65rem .8rem;
+      }
+      .escape-room-encounter {
+        width: 94%;
+        padding: .75rem;
+      }
+      .escape-room-encounter-icon {
+        width: 2.6rem;
+        height: 2.6rem;
+        flex-basis: 2.6rem;
+      }
+    }
+
+    /* Coin Quest stays on one exam screen: platform view and question panel remain together. */
+    body[data-exam-mode="escape_room"] {
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: #091322;
+    }
+    body[data-exam-mode="escape_room"] .top-bar {
+      position: absolute;
+      inset: 0 0 auto;
+      z-index: 120;
+      padding: .45rem .8rem;
+    }
+    body[data-exam-mode="escape_room"] .top-bar-inner {
+      max-width: none;
+    }
+    body[data-exam-mode="escape_room"] #escapeRoomHud {
+      position: fixed;
+      z-index: 110;
+      top: 58px;
+      left: 1%;
+      width: 98%;
+      margin: 0;
+      height: 76px;
+      padding: .4rem .85rem;
+      border: 1px solid rgba(196,181,253,.3);
+      border-radius: 1rem;
+      overflow: hidden;
+    }
+    body[data-exam-mode="escape_room"] #escapeRoomHud > div:nth-of-type(2),
+    body[data-exam-mode="escape_room"] #escapeRoomRoomMessage {
+      display: none !important;
+    }
+    body[data-exam-mode="escape_room"] #escapeRoomHud > div:first-child {
+      gap: .5rem;
+    }
+    body[data-exam-mode="escape_room"] #escapeRoomHud h2 {
+      font-size: .9rem;
+      line-height: 1.1;
+    }
+    body[data-exam-mode="escape_room"] #escapeRoomHud .h-12 {
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: 1.25rem;
+      border-radius: .8rem;
+    }
+    body[data-exam-mode="escape_room"] #escapeRoomHud .mt-3.h-2 {
+      margin-top: .35rem;
+      height: 5px;
+    }
+    body[data-exam-mode="escape_room"] #escapeRoomHud .mt-2.flex {
+      margin-top: .2rem;
+    }
+    body[data-exam-mode="escape_room"] #escapeRoomMapView {
+      position: fixed;
+      z-index: 40;
+      top: 144px;
+      bottom: 10px;
+      left: 1%;
+      width: 48.5%;
+      height: auto;
+      margin: 0;
+      border: 1px solid rgba(196,181,253,.3);
+      border-radius: 1.25rem;
+      display: flex;
+      flex-direction: column;
+    }
+    body[data-exam-mode="escape_room"] #escapeRoomMapView > div:first-child {
+      min-height: 54px;
+      padding: .45rem .7rem;
+    }
+    body[data-exam-mode="escape_room"] #escapeRoomMapView > div:first-child p:last-child {
+      font-size: .7rem;
+      line-height: 1.2;
+    }
+    body[data-exam-mode="escape_room"] .escape-room-playfield {
+      flex: 1;
+      min-height: 0;
+      grid-template-columns: minmax(0, 1fr) 108px;
+    }
+    body[data-exam-mode="escape_room"] #escapeRoomCanvas {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      aspect-ratio: auto;
+      object-fit: contain;
+    }
+    body[data-exam-mode="escape_room"] .escape-room-controls {
+      gap: .45rem;
+      padding: .45rem;
+      border-left: 1px solid rgba(196,181,253,.14);
+    }
+    body[data-exam-mode="escape_room"] .escape-room-controls-title,
+    body[data-exam-mode="escape_room"] .escape-room-controls-hint {
+      display: none;
+    }
+    body[data-exam-mode="escape_room"] .escape-room-dpad {
+      flex-wrap: wrap;
+      gap: .35rem;
+    }
+    body[data-exam-mode="escape_room"] .escape-room-stage .dpad-btn {
+      width: 2.45rem;
+      height: 2.45rem;
+    }
+    body[data-exam-mode="escape_room"] .escape-room-controls .btn-quick-encounter {
+      min-width: 0;
+      width: 100%;
+      padding: .55rem .35rem;
+      font-size: .7rem;
+    }
+    body[data-exam-mode="escape_room"] #classicExamView.escape-room-question-panel {
+      position: fixed;
+      z-index: 40;
+      top: 144px;
+      right: 1%;
+      bottom: 10px;
+      left: 50.5%;
+      width: 48.5%;
+      height: auto;
+      margin: 0;
+      padding: .6rem;
+      display: flex;
+      flex-direction: column;
+      gap: .55rem;
+      overflow: hidden;
+    }
+    body[data-exam-mode="escape_room"] #classicExamView .escape-room-encounter {
+      flex: 0 0 auto;
+      width: 100%;
+      min-height: 66px;
+      margin: 0;
+      padding: .6rem .75rem;
+      gap: .65rem;
+    }
+    body[data-exam-mode="escape_room"] #classicExamView .escape-room-encounter-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      flex-basis: 2.5rem;
+      font-size: 1.15rem;
+      border-radius: .8rem;
+    }
+    body[data-exam-mode="escape_room"] #classicExamView .escape-room-encounter h2 {
+      font-size: .95rem;
+      line-height: 1.15;
+    }
+    body[data-exam-mode="escape_room"] #classicExamView .escape-room-encounter p:last-child {
+      font-size: .68rem;
+      line-height: 1.2;
+    }
+    body[data-exam-mode="escape_room"] #classicExamView .progress-section {
+      display: none;
+    }
+    body[data-exam-mode="escape_room"] .escape-room-question-empty {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .65rem;
+      padding: 1.5rem;
+      text-align: center;
+      border: 1px dashed rgba(196,181,253,.32);
+      border-radius: 1.25rem;
+      background: radial-gradient(circle at 50% 0, rgba(168,85,247,.16), transparent 65%), rgba(15,18,32,.9);
+      color: #e9d5ff;
+    }
+    body[data-exam-mode="escape_room"] .escape-room-empty-coin {
+      font-size: 2.6rem;
+      filter: drop-shadow(0 0 16px rgba(250,204,21,.45));
+    }
+    body[data-exam-mode="escape_room"] .escape-room-question-empty h3 {
+      font-weight: 900;
+      font-size: 1.05rem;
+    }
+    body[data-exam-mode="escape_room"] .escape-room-question-empty p {
+      max-width: 28rem;
+      color: #b8b5c7;
+      font-size: .8rem;
+      line-height: 1.55;
+    }
+    body[data-exam-mode="escape_room"] #classicExamView.escape-room-question-open .escape-room-question-empty {
+      display: none;
+    }
+    body[data-exam-mode="escape_room"] #classicExamView .question-area {
+      flex: 1;
+      min-height: 0;
+      max-width: none;
+      width: 100%;
+      margin: 0;
+      padding: .75rem;
+      overflow: auto;
+      overscroll-behavior: contain;
+      display: none;
+    }
+    body[data-exam-mode="escape_room"] #classicExamView.escape-room-question-open .question-area {
+      display: block;
+    }
+    body[data-exam-mode="escape_room"] #classicExamView .question-area > div[style*="margin-top"] {
+      margin-top: .65rem !important;
+      padding-top: .55rem !important;
+    }
+    body[data-exam-mode="escape_room"] #classicExamView .q-text {
+      font-size: 1rem;
+      line-height: 1.45;
+      margin-bottom: .55rem;
+    }
+    body[data-exam-mode="escape_room"] #classicExamView .q-image {
+      max-height: 130px;
+      object-fit: contain;
+    }
+    @media (max-width: 760px) {
+      body[data-exam-mode="escape_room"] #escapeRoomHud {
+        top: 54px;
+        height: 68px;
+        padding: .35rem .6rem;
+      }
+      body[data-exam-mode="escape_room"] #escapeRoomHud .text-right {
+        padding: .35rem .55rem;
+      }
+      body[data-exam-mode="escape_room"] #escapeRoomMapView {
+        top: 130px;
+        left: 1%;
+        right: 1%;
+        bottom: auto;
+        width: auto;
+        height: clamp(170px, 29dvh, 255px);
+        border-radius: 1rem;
+      }
+      body[data-exam-mode="escape_room"] #escapeRoomMapView > div:first-child {
+        min-height: 40px;
+        padding: .35rem .55rem;
+      }
+      body[data-exam-mode="escape_room"] #escapeRoomMapView > div:first-child p:first-child {
+        font-size: .55rem;
+      }
+      body[data-exam-mode="escape_room"] #escapeRoomMapView > div:first-child p:last-child {
+        font-size: .62rem;
+      }
+      body[data-exam-mode="escape_room"] #escapeRoomPrompt {
+        min-height: 1.5rem;
+        padding: .25rem .45rem;
+        font-size: .58rem;
+      }
+      body[data-exam-mode="escape_room"] .escape-room-playfield {
+        position: relative;
+        display: block;
+        height: calc(100% - 40px);
+      }
+      body[data-exam-mode="escape_room"] #escapeRoomCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      body[data-exam-mode="escape_room"] .escape-room-controls {
+        position: absolute;
+        right: .4rem;
+        bottom: .35rem;
+        width: auto;
+        display: flex;
+        flex-direction: row;
+        gap: .35rem;
+        padding: 0;
+        border: 0;
+        background: transparent;
+      }
+      body[data-exam-mode="escape_room"] .escape-room-dpad {
+        gap: .3rem;
+      }
+      body[data-exam-mode="escape_room"] .escape-room-stage .dpad-btn {
+        width: 2.15rem;
+        height: 2.15rem;
+        border-radius: .7rem;
+        background: rgba(15,23,42,.82);
+      }
+      body[data-exam-mode="escape_room"] .escape-room-controls .btn-quick-encounter {
+        width: auto;
+        min-width: 2.15rem;
+        height: 2.15rem;
+        margin: 0;
+        padding: .35rem;
+        border-radius: .7rem;
+        font-size: .65rem;
+      }
+      body[data-exam-mode="escape_room"] #classicExamView.escape-room-question-panel {
+        top: calc(138px + clamp(170px, 29dvh, 255px));
+        right: 1%;
+        bottom: 8px;
+        left: 1%;
+        width: auto;
+        padding: .35rem;
+        gap: .35rem;
+      }
+      body[data-exam-mode="escape_room"] #classicExamView .escape-room-encounter {
+        min-height: 50px;
+        padding: .4rem .55rem;
+      }
+      body[data-exam-mode="escape_room"] #classicExamView .escape-room-encounter-icon {
+        width: 2rem;
+        height: 2rem;
+        flex-basis: 2rem;
+      }
+      body[data-exam-mode="escape_room"] #classicExamView .escape-room-encounter h2 {
+        font-size: .82rem;
+      }
+      body[data-exam-mode="escape_room"] #classicExamView .escape-room-encounter p:last-child {
+        display: none;
+      }
+      body[data-exam-mode="escape_room"] .escape-room-question-empty {
+        gap: .25rem;
+        padding: .5rem;
+      }
+      body[data-exam-mode="escape_room"] .escape-room-empty-coin {
+        font-size: 1.65rem;
+      }
+      body[data-exam-mode="escape_room"] .escape-room-question-empty h3 {
+        font-size: .85rem;
+      }
+      body[data-exam-mode="escape_room"] .escape-room-question-empty p {
+        font-size: .68rem;
+      }
+      body[data-exam-mode="escape_room"] #classicExamView .question-area {
+        padding: .4rem;
+      }
+      body[data-exam-mode="escape_room"] #classicExamView .q-text {
+        font-size: .84rem;
+        line-height: 1.3;
+        margin-bottom: .3rem;
+      }
+      body[data-exam-mode="escape_room"] #classicExamView .q-type-badge {
+        margin-bottom: .3rem;
+      }
+      body[data-exam-mode="escape_room"] #classicExamView .opt-card {
+        padding: .45rem .6rem;
+      }
+      body[data-exam-mode="escape_room"] #classicExamView .options-list {
+        gap: .35rem;
+      }
+    }
+
   </style>
 </head>
-<body>
+<body data-exam-mode="<?= esc($examMode ?? 'classic') ?>">
   <?= view('common/loader') ?>
 
   <div class="bg-anim"></div>
@@ -1363,6 +1904,10 @@
           <span class="text-[11px] font-black text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
             <span>⚡</span> Pokémon RPG
           </span>
+        <?php elseif (($examMode ?? 'classic') === 'escape_room'): ?>
+          <span class="text-[11px] font-black text-violet-300 bg-violet-500/15 border border-violet-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+            <span>🪙</span> Coin Quest
+          </span>
         <?php else: ?>
           <span class="text-[11px] font-black text-sky-300 bg-sky-500/15 border border-sky-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
             <span>📝</span> แบบมาตรฐาน
@@ -1381,10 +1926,93 @@
     </div>
   </div>
 
+  <?php if (($examMode ?? 'classic') === 'escape_room'): ?>
+    <section id="escapeRoomHud" class="escape-room-hud mx-auto mt-4 mb-0 w-[min(96%,1000px)] rounded-t-3xl border border-violet-400/30 border-b-0 bg-gradient-to-r from-[#171329] via-[#251b3d] to-[#111827] px-5 py-3 shadow-2xl shadow-violet-950/40">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="grid h-12 w-12 place-items-center rounded-2xl border border-violet-300/30 bg-violet-500/15 text-2xl">🪙</div>
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-violet-300">COIN QUEST</p>
+            <h2 class="text-lg font-black text-white">กระโดดเก็บเหรียญ ตอบคำถาม</h2>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-black/20 px-4 py-2 text-right">
+          <span class="block text-[10px] font-bold text-slate-400">ด่านปัจจุบัน</span>
+          <span id="escapeRoomRoomNumber" class="text-sm font-black text-amber-300">ด่าน 1 / --</span>
+        </div>
+      </div>
+      <div class="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-black">
+        <span id="escapeRoomStepSearch" class="escape-room-step">① วิ่งและกระโดด</span>
+        <span class="text-violet-400">›</span>
+        <span id="escapeRoomStepAnswer" class="escape-room-step">② ตอบคำถาม</span>
+        <span class="text-violet-400">›</span>
+        <span id="escapeRoomStepExit" class="escape-room-step">③ ไปด่านต่อไป</span>
+      </div>
+      <p id="escapeRoomRoomMessage" class="mt-2 text-xs font-semibold text-slate-300">วิ่งและกระโดดไปแตะเหรียญเพื่อรับคำถาม</p>
+      <div class="mt-3 h-2 overflow-hidden rounded-full bg-black/40">
+        <div id="escapeRoomProgressFill" class="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-400 to-amber-300 transition-all duration-500" style="width:0%"></div>
+      </div>
+      <div class="mt-2 flex items-center justify-between text-[10px] font-bold text-slate-400">
+        <span id="escapeRoomKeys">🪙 เหรียญที่เก็บได้ 0 เหรียญ</span>
+        <span id="escapeRoomExitStatus">🚪 ทางออกยังล็อกอยู่</span>
+      </div>
+    </section>
+  <?php endif; ?>
+
+  <?php if (($examMode ?? 'classic') === 'escape_room'): ?>
+    <section id="escapeRoomMapView" class="escape-room-stage mx-auto mt-0 mb-8 w-[min(96%,1000px)] overflow-hidden rounded-b-3xl border border-violet-400/30 border-t-0 bg-slate-950 shadow-2xl shadow-violet-950/40">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-violet-300/15 bg-slate-900/90 px-4 py-3">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-violet-300">โลกผจญภัยเก็บเหรียญ</p>
+          <p class="text-sm font-bold text-white">กระโดดและวิ่งไปแตะเหรียญเพื่อรับคำถาม</p>
+        </div>
+        <span id="escapeRoomPrompt" class="rounded-full bg-violet-400/10 px-3 py-1 text-xs font-bold text-violet-200">🪙 กระโดดแตะเหรียญเพื่อรับคำถาม</span>
+      </div>
+      <div class="escape-room-playfield">
+        <canvas id="escapeRoomCanvas" width="720" height="420" aria-label="เกมแพลตฟอร์มกระโดดเก็บเหรียญ" style="touch-action:none"></canvas>
+        <aside class="escape-room-controls">
+          <div class="escape-room-controls-title">
+            <span class="text-base">🎮</span>
+            <div><p class="text-[10px] font-black uppercase tracking-[.18em] text-violet-300">Platform game</p><p class="text-xs font-bold text-slate-200">วิ่ง กระโดด เก็บเหรียญ</p></div>
+          </div>
+          <div class="escape-room-dpad flex items-center justify-center gap-2 self-center">
+            <button type="button" class="dpad-btn" aria-label="เดินซ้าย" onpointerdown="escapeRoomHeldKeys.left=true" onpointerup="escapeRoomHeldKeys.left=false" onpointerleave="escapeRoomHeldKeys.left=false">◀</button>
+            <button type="button" class="dpad-btn escape-room-action-key" aria-label="กระโดด" onclick="escapeRoomWalk(0,-1)">⬆</button>
+            <button type="button" class="dpad-btn" aria-label="เดินขวา" onpointerdown="escapeRoomHeldKeys.right=true" onpointerup="escapeRoomHeldKeys.right=false" onpointerleave="escapeRoomHeldKeys.right=false">▶</button>
+          </div>
+          <p class="escape-room-controls-hint">คีย์บอร์ด: <strong>← →</strong> หรือ <strong>A D</strong> เพื่อวิ่ง<br>กด <strong>Space / ↑</strong> เพื่อกระโดด เก็บเหรียญเพื่อรับคำถาม</p>
+          <button type="button" id="escapeRoomInteractBtn" onclick="escapeRoomGuardianDefeated ? interactEscapeRoom() : escapeRoomWalk(0,-1)" class="btn-quick-encounter">
+            <span>⬆️</span><span>กระโดด</span>
+          </button>
+        </aside>
+      </div>
+    </section>
+  <?php endif; ?>
+
   <!-- ==========================================
        VIEW 1: CLASSIC STANDARD EXAM VIEW
        ========================================== -->
-  <div id="classicExamView">
+  <div id="classicExamView" class="<?= ($examMode ?? 'classic') === 'escape_room' ? 'escape-room-question-panel' : '' ?>">
+    <?php if (($examMode ?? 'classic') === 'escape_room'): ?>
+      <div class="escape-room-encounter mx-auto mt-5 w-[min(92%,900px)]">
+        <div class="escape-room-encounter-icon">🪙</div>
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-[.22em] text-fuchsia-200">Coin question</p>
+          <h2 class="text-lg font-black text-white">คำถามด่าน <span id="escapeRoomEncounterNumber">1</span></h2>
+          <p class="text-xs text-violet-100/70">ตอบคำถามเพื่อเก็บเหรียญและปลดล็อกด่านถัดไป</p>
+        </div>
+        <div class="ml-auto hidden text-right sm:block">
+          <span class="text-xs font-bold text-violet-200" id="escapeRoomEncounterKeys">🪙 0 เหรียญ</span>
+        </div>
+      </div>
+    <?php endif; ?>
+    <?php if (($examMode ?? 'classic') === 'escape_room'): ?>
+    <div id="escapeRoomQuestionEmpty" class="escape-room-question-empty">
+      <div class="escape-room-empty-coin">🪙</div>
+      <h3 id="escapeRoomQuestionEmptyTitle">เก็บเหรียญเพื่อเปิดคำถาม</h3>
+      <p id="escapeRoomQuestionEmptyText">ใช้ปุ่มซ้าย/ขวาเพื่อวิ่ง แล้วกระโดดแตะเหรียญ คำถามจะแสดงตรงนี้โดยไม่ออกจากฉากเกม</p>
+    </div>
+    <?php endif; ?>
     <!-- ===== PROGRESS ===== -->
     <div class="progress-section">
       <div class="progress-info">
@@ -1827,10 +2455,15 @@
                     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
                     'w', 'a', 's', 'd', 'W', 'A', 'S', 'D', ' ', 'Enter'
                 ];
+                if (currentExamMode === 'escape_room') allowedMovementKeys.push('e', 'E');
                 if (!allowedMovementKeys.includes(e.key)) {
                     shouldBlock = true;
                 } else {
                     // Check if Pokemon Map view wants to handle this key for walking
+                    if (window.handleEscapeRoomKey && window.handleEscapeRoomKey(e.key)) {
+                        e.preventDefault();
+                        return true;
+                    }
                     if (window.handlePokeMapKey && window.handlePokeMapKey(e.key)) {
                         e.preventDefault();
                         return true;
@@ -1933,8 +2566,14 @@
             const res = await response.json();
             if (res.success && res.questions) {
                 questions = res.questions;
-                if (questions.length > 0) displayQuestion();
-                else {
+                if (questions.length > 0) {
+                    if (currentExamMode === 'escape_room') {
+                        updateEscapeRoomProgress();
+                        drawEscapeRoom();
+                    } else {
+                        displayQuestion();
+                    }
+                } else {
                     isExamActive = false;
                     Swal.fire('ข้อผิดพลาด', 'ไม่มีข้อสอบในรายวิชานี้', 'error').then(() => window.location.href = '/');
                 }
@@ -1996,6 +2635,41 @@
         document.body.style.overflow = '';
     }
 
+    function updateEscapeRoomProgress() {
+        const roomNumber = document.getElementById('escapeRoomRoomNumber');
+        if (!roomNumber || !questions.length) return;
+
+        const current = currentQuestionIndex + 1;
+        const total = questions.length;
+        const cleared = Math.min(total, currentQuestionIndex + (escapeRoomGuardianDefeated ? 1 : 0));
+        const percentage = Math.round((cleared / total) * 100);
+        const setStep = (id, state) => {
+            const step = document.getElementById(id);
+            if (step) step.className = 'escape-room-step' + (state ? ' ' + state : '');
+        };
+        setStep('escapeRoomStepSearch', escapeRoomGuardianDefeated ? 'done' : 'active');
+        setStep('escapeRoomStepAnswer', escapeRoomEncounterActive ? 'active' : (escapeRoomGuardianDefeated ? 'done' : ''));
+        setStep('escapeRoomStepExit', escapeRoomGuardianDefeated ? 'active' : '');
+
+        roomNumber.textContent = `ด่าน ${current} / ${total}`;
+        const progress = document.getElementById('escapeRoomProgressFill');
+        if (progress) progress.style.width = `${percentage}%`;
+        const encounterNumber = document.getElementById('escapeRoomEncounterNumber');
+        const encounterKeys = document.getElementById('escapeRoomEncounterKeys');
+        if (encounterNumber) encounterNumber.textContent = current;
+        if (encounterKeys) encounterKeys.textContent = `🪙 ${escapeRoomKeysCollected} เหรียญ`;
+        const keys = document.getElementById('escapeRoomKeys');
+        const exitStatus = document.getElementById('escapeRoomExitStatus');
+        const roomMessage = document.getElementById('escapeRoomRoomMessage');
+        if (keys) keys.textContent = `🪙 เก็บได้ ${escapeRoomKeysCollected} เหรียญ`;
+        if (exitStatus) exitStatus.textContent = escapeRoomGuardianDefeated
+            ? (current === total ? '🏁 พร้อมจบการสอบ' : '➡️ เหรียญที่ตอบแล้ว พาไปด่านถัดไป')
+            : '🪙 กระโดดแตะเหรียญเพื่อรับคำถาม';
+        if (roomMessage) roomMessage.textContent = escapeRoomGuardianDefeated
+            ? 'ตอบคำถามแล้ว! กด E หรือปุ่มกระโดดเพื่อไปด่านถัดไป'
+            : 'วิ่งและกระโดดไปแตะเหรียญ แล้วตอบคำถามเพื่อเก็บเหรียญ';
+    }
+
     // ===== Display Question =====
     function displayQuestion() {
         const q = questions[currentQuestionIndex];
@@ -2006,6 +2680,7 @@
         // Update progress
         document.getElementById('examProgress').textContent = `ข้อที่ ${current} / ${total}`;
         document.getElementById('progressBarFill').style.width = `${(current / total) * 100}%`;
+        updateEscapeRoomProgress();
 
         // Badge
         const badge = q.type === 'writing'
@@ -2083,15 +2758,21 @@
         }
 
         // Buttons
-        document.getElementById('nextQuestionBtn').disabled = true;
-        document.getElementById('submitExamBtn').disabled = true;
+        const nextButton = document.getElementById('nextQuestionBtn');
+        const submitButton = document.getElementById('submitExamBtn');
+        nextButton.disabled = true;
+        submitButton.disabled = true;
+        nextButton.textContent = currentExamMode === 'escape_room'
+            ? (currentQuestionIndex === questions.length - 1 ? 'ตอบและจบการสอบ 🏁' : 'ตอบแล้ววิ่งต่อ ➔')
+            : 'ข้อถัดไป ➔';
+        submitButton.textContent = 'ส่งข้อสอบ ✓';
 
-        if (currentQuestionIndex === questions.length - 1) {
-            document.getElementById('nextQuestionBtn').classList.add('hidden');
-            document.getElementById('submitExamBtn').classList.remove('hidden');
+        if (currentExamMode === 'escape_room' || currentQuestionIndex < questions.length - 1) {
+            nextButton.classList.remove('hidden');
+            submitButton.classList.add('hidden');
         } else {
-            document.getElementById('nextQuestionBtn').classList.remove('hidden');
-            document.getElementById('submitExamBtn').classList.add('hidden');
+            nextButton.classList.add('hidden');
+            submitButton.classList.remove('hidden');
         }
 
         // Synchronize with Pokémon Game Stage if engine is loaded
@@ -2231,6 +2912,15 @@
             return;
         }
 
+        if (currentQ && currentQ.type === 'writing' && currentExamMode === 'escape_room') {
+            Swal.fire({ title: 'หมดเวลา!', text: 'หมดเวลาข้อนี้ เหรียญข้อถัดไปรออยู่ข้างหน้า', icon: 'info', timer: 1200, showConfirmButton: false });
+            setTimeout(() => {
+                const answer = collectAnswer();
+                returnToEscapeRoom(answer);
+            }, 1200);
+            return;
+        }
+
         if (currentQ && currentQ.type === 'writing') {
             Swal.fire({
                 title: 'หมดเวลา!',
@@ -2253,7 +2943,7 @@
 
             Swal.fire({ title: timeoutTitle, text: timeoutMsg, icon: timeoutIcon, timer: 1500, showConfirmButton: false });
             setTimeout(() => {
-                collectAnswer();
+                const answer = collectAnswer();
                 if (isPokemonMode) {
                     if (!answeredQuestions.includes(currentQuestionIndex)) {
                         answeredQuestions.push(currentQuestionIndex);
@@ -2265,6 +2955,8 @@
                     } else {
                         finishExam();
                     }
+                } else if (currentExamMode === 'escape_room') {
+                    returnToEscapeRoom(answer);
                 } else {
                     currentQuestionIndex++;
                     if (currentQuestionIndex < questions.length) {
@@ -2282,7 +2974,12 @@
     document.getElementById('nextQuestionBtn').onclick = moveToNext;
 
     function moveToNext() {
-        collectAnswer();
+        const answer = collectAnswer();
+        if (currentExamMode === 'escape_room') {
+            returnToEscapeRoom(answer);
+            return;
+        }
+
         currentQuestionIndex++;
         if (currentQuestionIndex < questions.length) {
             displayQuestion();
@@ -2291,6 +2988,7 @@
     }
 
     function collectAnswer() {
+        if (currentExamMode === 'escape_room' && escapeRoomAnswerRecorded) return '';
         var q = questions[currentQuestionIndex];
         var ansValue = '';
 
@@ -2306,6 +3004,8 @@
             questionId: String(q.id),
             selectedOption: String(ansValue)
         });
+        if (currentExamMode === 'escape_room') escapeRoomAnswerRecorded = true;
+        return ansValue;
     }
 
     // ===== Submit =====
@@ -2313,8 +3013,10 @@
         if (isSubmitting) return;
 
         const result = await Swal.fire({
-            title: 'ต้องการส่งข้อสอบ?',
-            text: "เมื่อส่งแล้วจะไม่สามารถกลับมาแก้ไขได้อีก",
+            title: currentExamMode === 'escape_room' ? 'พร้อมเปิดทางออกหรือยัง?' : 'ต้องการส่งข้อสอบ?',
+            text: currentExamMode === 'escape_room'
+                ? 'ส่งคำตอบเพื่อปลดล็อกทางออก เมื่อส่งแล้วจะกลับมาแก้ไขไม่ได้'
+                : "เมื่อส่งแล้วจะไม่สามารถกลับมาแก้ไขได้อีก",
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#10b981',
@@ -2649,6 +3351,269 @@
         setExamViewMode(mode, false);
     }
 
+    // ===== Coin Quest coin platformer =====
+    var escapeRoomPlayer = { x: 70, y: 354, vy: 0, grounded: true };
+    var escapeRoomKeysCollected = 0;
+    var escapeRoomEncounterActive = false;
+    var escapeRoomGuardianDefeated = false;
+    var escapeRoomAnswerRecorded = false;
+    var escapeRoomAnimationFrame = null;
+    var escapeRoomLastFrame = 0;
+    var escapeRoomHeldKeys = {};
+    var escapeRoomCoinTaken = false;
+    var escapeRoomPlatforms = [
+        { x: 0, y: 370, w: 720, h: 50 },
+        { x: 150, y: 300, w: 130, h: 16 },
+        { x: 340, y: 245, w: 135, h: 16 },
+        { x: 535, y: 305, w: 130, h: 16 },
+        { x: 70, y: 215, w: 105, h: 16 }
+    ];
+    var escapeRoomCoinSpots = [
+        { x: 120, y: 265 }, { x: 210, y: 265 }, { x: 285, y: 265 },
+        { x: 395, y: 210 }, { x: 465, y: 210 }, { x: 590, y: 270 }
+    ];
+    var escapeRoomCurrentCoin = escapeRoomCoinSpots[0];
+    var escapeRoomPreviousSceneIndex = -1;
+    var escapeRoomScene = {
+        skyTop: '#65c7ff', skyBottom: '#efffb5', hills: '#65c96f', ground: '#39a84e', grass: '#78d65d',
+        dirtA: '#a76532', dirtB: '#bd793d', platform: '#8b552f', platformTop: '#61bf4d', platformDetail: '#9ce36c'
+    };
+    var escapeRoomScenes = [
+        { skyTop: '#65c7ff', skyBottom: '#efffb5', hills: '#65c96f', ground: '#39a84e', grass: '#78d65d', dirtA: '#a76532', dirtB: '#bd793d', platform: '#8b552f', platformTop: '#61bf4d', platformDetail: '#9ce36c' },
+        { skyTop: '#ffb45e', skyBottom: '#fff0a8', hills: '#dc9b45', ground: '#b86a32', grass: '#e5a83f', dirtA: '#99502c', dirtB: '#b96838', platform: '#89502e', platformTop: '#dfa34a', platformDetail: '#f3cf72' },
+        { skyTop: '#7897f2', skyBottom: '#e9e4ff', hills: '#8c8fe0', ground: '#596eb4', grass: '#91a7ed', dirtA: '#68578f', dirtB: '#8170ad', platform: '#65588e', platformTop: '#9b91d1', platformDetail: '#c0b8ef' },
+        { skyTop: '#f68fc2', skyBottom: '#fff0d2', hills: '#e7789c', ground: '#b44f7a', grass: '#ef91a5', dirtA: '#a94c66', dirtB: '#c46878', platform: '#96516b', platformTop: '#ed8c9a', platformDetail: '#ffd0a1' }
+    ];
+
+    function generateEscapeRoomScene() {
+        let sceneIndex = Math.floor(Math.random() * escapeRoomScenes.length);
+        if (sceneIndex === escapeRoomPreviousSceneIndex) {
+            sceneIndex = (sceneIndex + 1 + Math.floor(Math.random() * (escapeRoomScenes.length - 1))) % escapeRoomScenes.length;
+        }
+        escapeRoomPreviousSceneIndex = sceneIndex;
+        escapeRoomScene = escapeRoomScenes[sceneIndex];
+        escapeRoomCurrentCoin = escapeRoomCoinSpots[Math.floor(Math.random() * escapeRoomCoinSpots.length)];
+    }
+
+    function transitionEscapeRoomScene() {
+        if (escapeRoomEncounterActive || !escapeRoomCoinTaken || currentQuestionIndex >= questions.length) return;
+        generateEscapeRoomScene();
+        escapeRoomPlayer = { x: 54, y: 354, vy: 0, grounded: true };
+        escapeRoomCoinTaken = false;
+        escapeRoomHeldKeys.left = false;
+        escapeRoomHeldKeys.right = false;
+        updateEscapeRoomProgress();
+        drawEscapeRoom();
+    }
+
+    function getEscapeRoomCoin() {
+        return escapeRoomCurrentCoin;
+    }
+
+    generateEscapeRoomScene();
+
+    function startEscapeRoomAnimation() {
+        if (escapeRoomAnimationFrame !== null) return;
+        const animate = (time) => {
+            const delta = Math.min(32, time - (escapeRoomLastFrame || time));
+            escapeRoomLastFrame = time;
+            if (!escapeRoomEncounterActive && currentExamMode === 'escape_room') {
+                if (escapeRoomHeldKeys.left) escapeRoomPlayer.x -= 4.2 * (delta / 16.7);
+                if (escapeRoomHeldKeys.right) escapeRoomPlayer.x += 4.2 * (delta / 16.7);
+                if (escapeRoomPlayer.x >= 690 && escapeRoomCoinTaken && currentQuestionIndex < questions.length) {
+                    transitionEscapeRoomScene();
+                } else {
+                    escapeRoomPlayer.x = Math.max(24, Math.min(696, escapeRoomPlayer.x));
+                }
+                escapeRoomPlayer.vy += 0.48 * (delta / 16.7);
+                const oldY = escapeRoomPlayer.y;
+                escapeRoomPlayer.y += escapeRoomPlayer.vy * (delta / 16.7);
+                escapeRoomPlayer.grounded = false;
+                for (const p of escapeRoomPlatforms) {
+                    if (escapeRoomPlayer.vy >= 0 && oldY <= p.y && escapeRoomPlayer.y >= p.y
+                        && escapeRoomPlayer.x + 10 > p.x && escapeRoomPlayer.x - 10 < p.x + p.w) {
+                        escapeRoomPlayer.y = p.y;
+                        escapeRoomPlayer.vy = 0;
+                        escapeRoomPlayer.grounded = true;
+                        break;
+                    }
+                }
+                const coin = getEscapeRoomCoin();
+                if (!escapeRoomCoinTaken && !escapeRoomGuardianDefeated
+                    && Math.hypot(escapeRoomPlayer.x - coin.x, (escapeRoomPlayer.y - 18) - coin.y) < 25) {
+                    interactEscapeRoom();
+                }
+                drawEscapeRoom();
+            }
+            escapeRoomAnimationFrame = requestAnimationFrame(animate);
+        };
+        escapeRoomAnimationFrame = requestAnimationFrame(animate);
+    }
+
+    function stopEscapeRoomAnimation() {
+        if (escapeRoomAnimationFrame !== null) cancelAnimationFrame(escapeRoomAnimationFrame);
+        escapeRoomAnimationFrame = null;
+        escapeRoomLastFrame = 0;
+    }
+
+    function drawEscapeRoom() {
+        const canvas = document.getElementById('escapeRoomCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width, h = canvas.height;
+        const t = Date.now() / 1000;
+        const sky = ctx.createLinearGradient(0, 0, 0, h);
+        sky.addColorStop(0, escapeRoomScene.skyTop); sky.addColorStop(.62, escapeRoomScene.skyBottom); sky.addColorStop(1, '#fffdf0');
+        ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
+
+        // Bright hills and clouds create a cheerful side-scrolling platform scene.
+        ctx.fillStyle = 'rgba(255,255,255,.78)';
+        [[95,72],[260,112],[510,68],[650,128]].forEach(([x,y],i) => {
+            const drift = (t * (i + 1) * 3) % 760;
+            const cx = (x + drift) % 760 - 20;
+            ctx.beginPath(); ctx.arc(cx,y,18,0,Math.PI*2); ctx.arc(cx+22,y-8,23,0,Math.PI*2);
+            ctx.arc(cx+48,y,17,0,Math.PI*2); ctx.fill();
+        });
+        ctx.fillStyle = escapeRoomScene.hills;
+        [[-30,350,180],[210,350,240],[485,350,270]].forEach(([x,y,r]) => {
+            ctx.beginPath(); ctx.ellipse(x+r/2,y,r/2,75,0,Math.PI,Math.PI*2); ctx.fill();
+        });
+        ctx.fillStyle = escapeRoomScene.ground; ctx.fillRect(0, 370, w, 50);
+        ctx.fillStyle = escapeRoomScene.grass; ctx.fillRect(0, 370, w, 9);
+        for (let x=0; x<w; x+=34) {
+            ctx.fillStyle = ((x/34)%2) ? escapeRoomScene.dirtA : escapeRoomScene.dirtB;
+            ctx.fillRect(x,379,32,41);
+            ctx.strokeStyle='rgba(91,48,25,.35)'; ctx.strokeRect(x,379,32,41);
+        }
+
+        escapeRoomPlatforms.slice(1).forEach((p,i) => {
+            ctx.fillStyle = escapeRoomScene.platform; ctx.fillRect(p.x,p.y,p.w,p.h);
+            ctx.fillStyle = escapeRoomScene.platformTop; ctx.fillRect(p.x,p.y-7,p.w,10);
+            ctx.fillStyle = escapeRoomScene.platformDetail;
+            for (let x=p.x+8; x<p.x+p.w-5; x+=22) ctx.fillRect(x,p.y-7,11,4);
+            ctx.fillStyle = 'rgba(80,43,24,.45)';
+            for (let x=p.x+15; x<p.x+p.w-8; x+=38) ctx.fillRect(x,p.y+5,10,6);
+        });
+
+        // Question coin floats above a platform; touching it opens the current exam question.
+        const coin = getEscapeRoomCoin();
+        if (!escapeRoomCoinTaken && !escapeRoomGuardianDefeated) {
+            const cy = coin.y + Math.sin(t*4)*4;
+            ctx.save(); ctx.translate(coin.x,cy);
+            ctx.shadowColor='#ffbf24'; ctx.shadowBlur=18;
+            ctx.fillStyle='#ffdc45'; ctx.beginPath(); ctx.ellipse(0,0,10,15,0,0,Math.PI*2); ctx.fill();
+            ctx.shadowBlur=0; ctx.strokeStyle='#f39718'; ctx.lineWidth=3; ctx.stroke();
+            ctx.fillStyle='#fff6a5'; ctx.fillRect(-2,-8,4,16); ctx.restore();
+        }
+
+        // Original, generic pixel hero (no external character art).
+        const px=escapeRoomPlayer.x, py=escapeRoomPlayer.y;
+        ctx.fillStyle='rgba(27,62,61,.22)'; ctx.beginPath(); ctx.ellipse(px,py+3,16,5,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#d94b35'; ctx.fillRect(px-12,py-34,24,9);
+        ctx.fillStyle='#f1c09a'; ctx.fillRect(px-9,py-26,18,13);
+        ctx.fillStyle='#315bd8'; ctx.fillRect(px-11,py-13,22,15);
+        ctx.fillStyle='#233f9c'; ctx.fillRect(px-10,py+1,8,5); ctx.fillRect(px+3,py+1,8,5);
+        ctx.fillStyle='#fff'; ctx.fillRect(px-5,py-22,3,3); ctx.fillRect(px+3,py-22,3,3);
+        ctx.fillStyle='#342625'; ctx.fillRect(px-10,py-31,20,5);
+
+        const prompt = document.getElementById('escapeRoomPrompt');
+        const button = document.getElementById('escapeRoomInteractBtn');
+        if (prompt) prompt.textContent = escapeRoomGuardianDefeated
+            ? '🚩 ถึงทางออกแล้ว กด E เพื่อไปด่านถัดไป'
+            : (escapeRoomCoinTaken ? '➡️ วิ่งไปทางขวาจนสุดแมพเพื่อเข้าสู่ฉากใหม่' : '🪙 วิ่งและกระโดดไปเก็บเหรียญ');
+        if (button) {
+            button.innerHTML = escapeRoomGuardianDefeated ? '<span>➡️</span><span>ไปต่อ</span>' : '<span>⬆️</span><span>กระโดด</span>';
+        }
+        const emptyTitle = document.getElementById('escapeRoomQuestionEmptyTitle');
+        const emptyText = document.getElementById('escapeRoomQuestionEmptyText');
+        if (emptyTitle) emptyTitle.textContent = escapeRoomGuardianDefeated
+            ? 'ตอบแล้ว! ไปต่อได้เลย'
+            : (escapeRoomCoinTaken ? 'วิ่งไปสุดแมพเพื่อเปลี่ยนฉาก' : 'เก็บเหรียญเพื่อเปิดคำถาม');
+        if (emptyText) emptyText.textContent = escapeRoomGuardianDefeated
+            ? (currentQuestionIndex >= questions.length - 1 ? 'ส่งข้อสอบเพื่อจบเกม' : 'ไปยังด่านถัดไปได้เลย')
+            : (escapeRoomCoinTaken
+                ? 'ใช้ปุ่มขวาหรือ D วิ่งไปจนสุดทาง แล้วเกมจะพาเข้าสู่ฉากสุ่มใหม่พร้อมเหรียญข้อถัดไป'
+                : 'คุณควบคุมตัวละครเอง: ใช้ปุ่มซ้าย/ขวาเพื่อวิ่ง และกดกระโดดไปเก็บเหรียญ คำถามจะแสดงตรงนี้');
+    }
+
+    function escapeRoomWalk(dx, dy) {
+        if (currentExamMode !== 'escape_room' || escapeRoomEncounterActive) return;
+        if (dx < 0) escapeRoomPlayer.x -= 34;
+        if (dx > 0) escapeRoomPlayer.x += 34;
+        escapeRoomPlayer.x = Math.max(24, Math.min(696, escapeRoomPlayer.x));
+        if (dy < 0 && escapeRoomPlayer.grounded) {
+            escapeRoomPlayer.vy = -10.5;
+            escapeRoomPlayer.grounded = false;
+        }
+        drawEscapeRoom();
+    }
+
+    async function interactEscapeRoom() {
+        if (currentExamMode !== 'escape_room' || escapeRoomEncounterActive || !questions.length) return;
+        const coin = getEscapeRoomCoin();
+        if (!escapeRoomCoinTaken && Math.hypot(escapeRoomPlayer.x - coin.x, (escapeRoomPlayer.y - 18) - coin.y) >= 30) {
+            const prompt = document.getElementById('escapeRoomPrompt');
+            if (prompt) prompt.textContent = 'กระโดดและเคลื่อนที่ไปแตะเหรียญก่อน';
+            return;
+        }
+        escapeRoomCoinTaken = true;
+        escapeRoomHeldKeys.left = false;
+        escapeRoomHeldKeys.right = false;
+        escapeRoomEncounterActive = true;
+        stopEscapeRoomAnimation();
+        document.getElementById('questionTimer').classList.remove('hidden');
+        const encounterView = document.getElementById('classicExamView');
+        encounterView.classList.add('escape-room-question-open');
+        encounterView.classList.remove('escape-room-enter');
+        void encounterView.offsetWidth;
+        encounterView.classList.add('escape-room-enter');
+        displayQuestion();
+    }
+
+    function returnToEscapeRoom(answer = '') {
+        clearInterval(timerInterval);
+        document.getElementById('questionTimer').classList.add('hidden');
+        if (String(answer).trim() !== '') escapeRoomKeysCollected++;
+
+        if (currentQuestionIndex >= questions.length - 1) {
+                stopEscapeRoomAnimation();
+            escapeRoomEncounterActive = false;
+            document.getElementById('classicExamView').classList.remove('escape-room-question-open');
+            finishExam();
+            return;
+        }
+
+        currentQuestionIndex++;
+        escapeRoomEncounterActive = false;
+        escapeRoomAnswerRecorded = false;
+        escapeRoomGuardianDefeated = false;
+        // Keep this coin cleared; the next coin appears after the player reaches the map end.
+        escapeRoomCoinTaken = true;
+
+        const encounterView = document.getElementById('classicExamView');
+        encounterView.classList.remove('escape-room-question-open');
+        const map = document.getElementById('escapeRoomMapView');
+        if (!map) return;
+        updateEscapeRoomProgress();
+        drawEscapeRoom();
+        startEscapeRoomAnimation();
+    }
+
+    function handleEscapeRoomKey(key) {
+        if (currentExamMode !== 'escape_room' || escapeRoomEncounterActive) return false;
+        if (key === 'ArrowLeft' || key === 'a' || key === 'A') { escapeRoomHeldKeys.left = true; return true; }
+        if (key === 'ArrowRight' || key === 'd' || key === 'D') { escapeRoomHeldKeys.right = true; return true; }
+        if (key === ' ' || key === 'ArrowUp' || key === 'w' || key === 'W') { escapeRoomWalk(0, -1); return true; }
+        if (key === 'e' || key === 'E' || key === 'Enter') { interactEscapeRoom(); return true; }
+        return false;
+    }
+    window.handleEscapeRoomKey = handleEscapeRoomKey;
+
+    document.addEventListener('keyup', (event) => {
+        if (['ArrowLeft','a','A'].includes(event.key)) escapeRoomHeldKeys.left = false;
+        if (['ArrowRight','d','D'].includes(event.key)) escapeRoomHeldKeys.right = false;
+    });
+
     function toggleExamViewMode() {
         // Locked by teacher - switching disabled
         return;
@@ -2660,10 +3625,16 @@
 
         const classicView = document.getElementById('classicExamView');
         const pokemonView = document.getElementById('pokemonExamView');
+        const escapeRoomHud = document.getElementById('escapeRoomHud');
         const toggleBtnText = document.getElementById('examModeToggleText');
         const toggleBtnIcon = document.getElementById('examModeToggleIcon');
 
         if (mode === 'pokemon') {
+            if (escapeRoomHud) escapeRoomHud.classList.add('hidden');
+            const escapeRoomMap = document.getElementById('escapeRoomMapView');
+            if (escapeRoomMap) escapeRoomMap.classList.add('hidden');
+            stopEscapeRoomAnimation();
+            document.getElementById('questionTimer').classList.remove('hidden');
             classicView.classList.add('hidden');
             pokemonView.classList.remove('hidden');
             if (toggleBtnText) toggleBtnText.textContent = 'โหมดปกติ';
@@ -2685,7 +3656,24 @@
             }
         } else {
             pokemonView.classList.add('hidden');
-            classicView.classList.remove('hidden');
+            const escapeRoomMap = document.getElementById('escapeRoomMapView');
+            if (mode === 'escape_room' && escapeRoomMap) {
+                document.getElementById('questionTimer').classList.add('hidden');
+                classicView.classList.remove('hidden', 'escape-room-question-open');
+                escapeRoomMap.classList.remove('hidden');
+                escapeRoomPlayer = { x: 70, y: 354, vy: 0, grounded: true };
+                        updateEscapeRoomProgress();
+                drawEscapeRoom();
+                startEscapeRoomAnimation();
+            } else {
+                stopEscapeRoomAnimation();
+                document.getElementById('questionTimer').classList.remove('hidden');
+                classicView.classList.remove('hidden');
+                if (escapeRoomMap) escapeRoomMap.classList.add('hidden');
+            }
+            if (escapeRoomHud) {
+                escapeRoomHud.classList.toggle('hidden', mode !== 'escape_room');
+            }
             if (toggleBtnText) toggleBtnText.textContent = 'โหมด Pokémon';
             if (toggleBtnIcon) toggleBtnIcon.textContent = '🎮';
 

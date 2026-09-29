@@ -574,7 +574,17 @@ class ExamController extends BaseController
             if (isset($submitted[$qId])) {
                 return $this->respond(['success' => false, 'message' => 'พบคำตอบซ้ำในชุดข้อสอบ'], 400);
             }
-            $submitted[$qId] = trim((string) ($ans['selectedOption'] ?? ''));
+            $selectedOption = trim((string) ($ans['selectedOption'] ?? ''));
+            if (($snapshotMap[$qId]['type'] ?? 'choice') !== 'writing' && $selectedOption !== '') {
+                $allowedOptions = array_map(
+                    static fn($option) => trim((string) $option),
+                    $snapshotMap[$qId]['options'] ?? []
+                );
+                if (!in_array($selectedOption, $allowedOptions, true)) {
+                    return $this->respond(['success' => false, 'message' => 'คำตอบที่ส่งมาไม่ใช่ตัวเลือกของข้อสอบ'], 400);
+                }
+            }
+            $submitted[$qId] = $selectedOption;
         }
 
         $score = 0.0;

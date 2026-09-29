@@ -691,7 +691,7 @@ class AdminController extends BaseController
             $this->checkAuth();
             $id = (string) $this->request->getPost('id');
             $mode = (string) $this->request->getPost('exam_mode');
-            if ($id === '' || !in_array($mode, ['classic', 'pokemon'], true)) return $this->respond(['success' => false, 'message' => 'รูปแบบการสอบไม่ถูกต้อง'], 400);
+            if ($id === '' || !in_array($mode, ['classic', 'pokemon', 'escape_room'], true)) return $this->respond(['success' => false, 'message' => 'รูปแบบการสอบไม่ถูกต้อง'], 400);
             $this->authorizeExam($id);
             (new \App\Models\ExamModel())->update($id, ['exam_mode' => $mode]);
             return $this->respond(['success' => true, 'message' => 'ปรับปรุงรูปแบบการสอบเรียบร้อยแล้ว']);

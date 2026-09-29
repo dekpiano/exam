@@ -601,6 +601,15 @@
                     </div>
                     <span class="text-[10px] text-slate-400 font-medium font-sans">เดินผจญภัยบนแผนที่ RPG สไตล์โปเกมอน ตอบคำถามประลอง</span>
                   </button>
+
+                  <button id="btn-mode-escape" onclick="changeExamModeDirect('escape_room')"
+                    class="w-full py-3.5 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer">
+                    <div class="flex items-center justify-between">
+                      <span class="font-extrabold text-white text-sm flex items-center gap-2">🪙 Coin Quest</span>
+                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/30 text-violet-300 border border-violet-500/40 font-semibold">Platformer</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-medium font-sans">วิ่งและกระโดดเก็บเหรียญ แล้วตอบคำถามเพื่อผ่านด่าน</span>
+                  </button>
                 </div>
               </div>
 
@@ -884,7 +893,7 @@
                   <span class="flex items-center gap-1.5"><span>🎮</span> รูปแบบการสอบ (Exam Mode)</span>
                   <span class="text-[10px] text-slate-400 font-normal">กำหนดให้ผู้เรียนสอบในรูปแบบนี้</span>
                 </label>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <label class="flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-slate-800/80 cursor-pointer hover:border-sky-400 transition-all">
                     <input type="radio" name="exam_mode" value="classic" id="workspace-mode-classic" class="accent-sky-500 w-4 h-4 cursor-pointer">
                     <div>
@@ -897,6 +906,13 @@
                     <div>
                       <div class="text-xs font-bold text-amber-300 flex items-center gap-1"><span>⚡</span> เดินเกม Pokémon RPG</div>
                       <div class="text-[11px] text-slate-400">ผจญภัยบนแผนที่ ประลองคำถามโปเกมอน</div>
+                    </div>
+                  </label>
+                  <label class="flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-slate-800/80 cursor-pointer hover:border-violet-400 transition-all">
+                    <input type="radio" name="exam_mode" value="escape_room" id="workspace-mode-escape" class="accent-violet-500 w-4 h-4 cursor-pointer">
+                    <div>
+                      <div class="text-xs font-bold text-violet-300 flex items-center gap-1"><span>🪙</span> Coin Quest</div>
+                      <div class="text-[11px] text-slate-400">วิ่งกระโดดแตะเหรียญเพื่อรับคำถาม แล้วตอบเพื่อไปด่านถัดไป</div>
                     </div>
                   </label>
                 </div>
@@ -1123,7 +1139,7 @@
                 <ul class="list-disc list-inside space-y-1.5 pl-2">
                   <li><b>เวลารายข้อ vs เวลาสอบรวม:</b> สามารถตั้งเวลานับถอยหลังรายข้อ (ปรนัย/อัตนัย) เพื่อบังคับให้ทำทีละข้อ หรือตั้งเวลาสอบรวมทั้งฉบับ (นาที)</li>
                   <li><b>นโยบายการเข้าร่วมสอบ (Join Policy):</b> <code>anytime</code> (เข้าสอบได้ทันที) หรือ <code>lobby_first</code> (ต้องรอในห้องพักคอยจนกว่าครูจะกดปุ่ม Start)</li>
-                  <li><b>โหมดการจัดสอบ:</b> เลือก <code>classic</code> สำหรับข้อสอบทางการมาตรฐาน หรือ <code>pokemon</code> สำหรับจัดสอบในรูปแบบเกม RPG 2D</li>
+                  <li><b>โหมดการจัดสอบ:</b> เลือก <code>classic</code> สำหรับข้อสอบมาตรฐาน, <code>pokemon</code> สำหรับเกม RPG 2D หรือ <code>escape_room</code> สำหรับเกม Coin Quest กระโดดเก็บเหรียญและตอบคำถาม</li>
                 </ul>
               </div>
             </div>
@@ -1863,9 +1879,11 @@
                 <span>${typeIcon}</span> ${escapeHtml(e.exam_type || 'ทั่วไป')}
               </span>
               <div class="flex items-center gap-1.5 flex-wrap justify-end">
-                ${e.exam_mode === 'pokemon' 
-                  ? `<span class="px-2 py-0.5 text-[10px] font-black rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm flex items-center gap-1" title="รูปแบบการสอบ: เดินเล่นเกม Pokémon RPG"><span>⚡</span> Pokémon</span>` 
-                  : `<span class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-slate-700/60 text-slate-300 border border-white/5" title="รูปแบบการสอบ: ข้อสอบมาตรฐาน"><span>📝</span> ปกติ</span>`
+                ${e.exam_mode === 'pokemon'
+                  ? `<span class="px-2 py-0.5 text-[10px] font-black rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm flex items-center gap-1" title="รูปแบบการสอบ: เดินเล่นเกม Pokémon RPG"><span>⚡</span> Pokémon</span>`
+                  : (e.exam_mode === 'escape_room'
+                    ? `<span class="px-2 py-0.5 text-[10px] font-black rounded-lg bg-violet-500/20 text-violet-300 border border-violet-500/40 shadow-sm flex items-center gap-1" title="รูปแบบการสอบ: Coin Quest"><span>🪙</span> Coin Quest</span>`
+                    : `<span class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-slate-700/60 text-slate-300 border border-white/5" title="รูปแบบการสอบ: ข้อสอบมาตรฐาน"><span>📝</span> ปกติ</span>`)
                 }
                 <span class="text-[10px] text-slate-300 font-bold bg-white/5 border border-white/10 px-2 py-0.5 rounded-lg">
                   เทอม ${escapeHtml(e.semester || '-')}/${escapeHtml(e.academic_year || '-')}
@@ -2415,6 +2433,7 @@
                 class="w-full bg-slate-800 border-2 border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 rounded-xl px-3.5 py-2.5 text-sm text-white font-black outline-none transition-all cursor-pointer">
                 <option value="classic" ${(!e.exam_mode || e.exam_mode === 'classic') ? 'selected' : ''}>📝 แบบมาตรฐาน (Classic Mode)</option>
                 <option value="pokemon" ${e.exam_mode === 'pokemon' ? 'selected' : ''}>⚡ เดินเกม Pokémon RPG (Gamified Mode)</option>
+                <option value="escape_room" ${e.exam_mode === 'escape_room' ? 'selected' : ''}>🪙 Coin Quest (กระโดดเก็บเหรียญ ตอบคำถาม)</option>
               </select>
             </div>
 
@@ -2686,7 +2705,7 @@
               <span class="flex items-center gap-1.5"><span>🎮</span> รูปแบบการสอบ (Exam Mode)</span>
               <span class="text-[10px] text-slate-400 font-normal">กำหนดให้ผู้เรียนสอบในรูปแบบนี้</span>
             </label>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-white/10 bg-slate-800/90 cursor-pointer hover:border-sky-400 transition-all">
                 <input type="radio" name="swal-e-mode" value="classic" ${(!eData.exam_mode || eData.exam_mode === 'classic') ? 'checked' : ''} class="accent-sky-500 w-4 h-4 cursor-pointer">
                 <div>
@@ -2699,6 +2718,13 @@
                 <div>
                   <div class="text-xs font-bold text-amber-300 flex items-center gap-1"><span>⚡</span> Pokémon RPG</div>
                   <div class="text-[10px] text-slate-400">เดินแผนที่ สู้โปเกมอน</div>
+                </div>
+              </label>
+              <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-white/10 bg-slate-800/90 cursor-pointer hover:border-violet-400 transition-all">
+                <input type="radio" name="swal-e-mode" value="escape_room" ${eData.exam_mode === 'escape_room' ? 'checked' : ''} class="accent-violet-500 w-4 h-4 cursor-pointer">
+                <div>
+                  <div class="text-xs font-bold text-violet-300 flex items-center gap-1"><span>🪙</span> Coin Quest</div>
+                  <div class="text-[10px] text-slate-400">กระโดดเก็บเหรียญแล้วตอบคำถาม</div>
                 </div>
               </label>
             </div>
@@ -2847,6 +2873,9 @@
       if (currentMode === 'pokemon') {
         const pokeRadio = document.getElementById('workspace-mode-pokemon');
         if (pokeRadio) pokeRadio.checked = true;
+      } else if (currentMode === 'escape_room') {
+        const escapeRadio = document.getElementById('workspace-mode-escape');
+        if (escapeRadio) escapeRadio.checked = true;
       } else {
         const classicRadio = document.getElementById('workspace-mode-classic');
         if (classicRadio) classicRadio.checked = true;
@@ -3741,9 +3770,11 @@
           Swal.fire({
             icon: 'success',
             title: 'เปลี่ยนรูปแบบการสอบสำเร็จ!',
-            text: mode === 'pokemon' 
-              ? 'ปรับเป็นโหมดเดินเล่นเกม Pokémon RPG Adventure แล้ว' 
-              : 'ปรับเป็นโหมดข้อสอบมาตรฐาน (Classic) แล้ว',
+            text: mode === 'pokemon'
+              ? 'ปรับเป็นโหมดเดินเล่นเกม Pokémon RPG Adventure แล้ว'
+              : (mode === 'escape_room'
+                ? 'ปรับเป็นโหมด Coin Quest กระโดดเก็บเหรียญและตอบคำถามแล้ว'
+                : 'ปรับเป็นโหมดข้อสอบมาตรฐาน (Classic) แล้ว'),
             timer: 2000,
             showConfirmButton: false
           });
@@ -3759,10 +3790,14 @@
     function updateExamModeUI(mode) {
       const btnClassic = document.getElementById('btn-mode-classic');
       const btnPokemon = document.getElementById('btn-mode-pokemon');
+      const btnEscape = document.getElementById('btn-mode-escape');
       const badge = document.getElementById('monitor-mode-badge');
 
       if (badge) {
-        if (mode === 'pokemon') {
+        if (mode === 'escape_room') {
+          badge.className = "px-3 py-1 text-xs font-black rounded-xl bg-violet-500/20 text-violet-300 border border-violet-500/40 shadow-sm";
+          badge.innerHTML = "🪙 Coin Quest";
+        } else if (mode === 'pokemon') {
           badge.className = "px-3 py-1 text-xs font-black rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm";
           badge.innerHTML = "⚡ Pokémon RPG";
         } else {
@@ -3772,6 +3807,17 @@
       }
 
       if (!btnClassic || !btnPokemon) return;
+
+      if (btnEscape) {
+        btnEscape.className = mode === 'escape_room'
+          ? "w-full py-3.5 px-4 bg-gradient-to-r from-violet-600 to-indigo-700 text-white font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-violet-400/40 shadow-lg shadow-violet-500/20 scale-[1.01] monitor-choice-active"
+          : "w-full py-3.5 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer opacity-50 hover:opacity-90";
+      }
+      if (mode === 'escape_room') {
+        btnClassic.className = "w-full py-3.5 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer opacity-50 hover:opacity-90";
+        btnPokemon.className = "w-full py-3.5 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-350 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer opacity-50 hover:opacity-90";
+        return;
+      }
 
       if (mode === 'pokemon') {
         btnPokemon.className = "w-full py-3.5 px-4 bg-gradient-to-r from-amber-500/30 via-red-500/25 to-purple-500/30 text-amber-200 font-bold rounded-2xl text-xs transition-all text-left flex flex-col gap-1 cursor-pointer border border-amber-500/50 shadow-lg shadow-amber-500/20 scale-[1.01] monitor-choice-active";

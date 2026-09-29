@@ -202,15 +202,15 @@
           <!-- Selected Exam Mode in Lobby (กำหนดโดยครูผู้สอน) -->
           <div class="w-full bg-slate-900/80 border border-white/10 rounded-2xl p-3 flex items-center justify-between gap-3">
             <div class="flex items-center gap-2.5 text-left">
-              <span id="lobbyModeIcon" class="text-2xl"><?= ($examMode ?? 'classic') === 'pokemon' ? '⚡' : '📝' ?></span>
+              <span id="lobbyModeIcon" class="text-2xl"><?= ($examMode ?? 'classic') === 'pokemon' ? '⚡' : ((($examMode ?? 'classic') === 'escape_room') ? '🪙' : '📝') ?></span>
               <div>
                 <span class="text-[10px] font-bold text-slate-400 block uppercase">รูปแบบการสอบ (กำหนดโดยครู)</span>
-                <span id="lobbyModeName" class="text-xs font-black <?= ($examMode ?? 'classic') === 'pokemon' ? 'text-amber-300' : 'text-sky-400' ?>">
-                  <?= ($examMode ?? 'classic') === 'pokemon' ? '🎮 เดินเล่นเกม Pokémon RPG' : '📝 โหมดข้อสอบมาตรฐาน (Classic)' ?>
+                <span id="lobbyModeName" class="text-xs font-black <?= ($examMode ?? 'classic') === 'pokemon' ? 'text-amber-300' : ((($examMode ?? 'classic') === 'escape_room') ? 'text-violet-300' : 'text-sky-400') ?>">
+                  <?= ($examMode ?? 'classic') === 'pokemon' ? '🎮 เดินเล่นเกม Pokémon RPG' : ((($examMode ?? 'classic') === 'escape_room') ? '🪙 Coin Quest — กระโดดเก็บเหรียญ ตอบคำถาม' : '📝 โหมดข้อสอบมาตรฐาน (Classic)') ?>
                 </span>
               </div>
             </div>
-            <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full <?= ($examMode ?? 'classic') === 'pokemon' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-sky-500/20 text-sky-300 border border-sky-500/30' ?>">
+            <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full <?= ($examMode ?? 'classic') === 'pokemon' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : ((($examMode ?? 'classic') === 'escape_room') ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' : 'bg-sky-500/20 text-sky-300 border border-sky-500/30') ?>">
               ครูกำหนด
             </span>
           </div>
@@ -315,6 +315,10 @@
                 iconEl.textContent = '⚡';
                 nameEl.textContent = '🎮 เดินเล่นเกม Pokémon RPG';
                 nameEl.className = 'text-xs font-black text-amber-300';
+            } else if (teacherExamMode === 'escape_room') {
+                iconEl.textContent = '🪙';
+                nameEl.textContent = 'Coin Quest — กระโดดเก็บเหรียญ ตอบคำถาม';
+                nameEl.className = 'text-xs font-black text-violet-300';
             } else {
                 iconEl.textContent = '📝';
                 nameEl.textContent = 'โหมดข้อสอบมาตรฐาน (Classic)';
